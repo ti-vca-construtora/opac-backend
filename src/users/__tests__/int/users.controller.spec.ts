@@ -108,10 +108,66 @@ describe('UsersController', () => {
     });
   });
 
+  describe('PATCH /users', () => {
+    it('should update an user by id', async () => {
+      const user = await prisma.user.create({
+        data: { email: 'user4@test.com', hash: 'hash4', name: 'User 4' },
+      });
+
+      await pactum
+        .spec()
+        .patch(`/users/${user.id}`)
+        .withBody({
+          email: 'modificado@email.com',
+        })
+        .expectStatus(204);
+
+      await pactum
+        .spec()
+        .get(`/users/${user.id}`)
+        .expectStatus(200)
+        .expectBody({
+          data: {
+            email: 'modificado@email.com',
+            hash: user.hash,
+            id: user.id,
+            name: user.name,
+          },
+        });
+    });
+
+    it('should not update an user with invalid info', async () => {
+      const user = await prisma.user.create({
+        data: { email: 'user5@test.com', hash: 'hash5', name: 'User 5' },
+      });
+
+      await pactum
+        .spec()
+        .patch(`/users/${user.id}`)
+        .withBody({
+          notvalid: 'modificado@email.com',
+        })
+        .expectStatus(204);
+
+      await pactum
+        .spec()
+        .get(`/users/${user.id}`)
+        .expectStatus(200)
+        .expectBody({
+          data: {
+            email: user.email,
+            hash: user.hash,
+            id: user.id,
+            name: user.name,
+          },
+        });
+    });
+  });
+
   describe('DELETE /users', () => {
     it('should delete an user by id', async () => {
       const user = await prisma.user.create({
-        data: { email: 'user4@test.com', hash: 'hash4', name: 'User 4' },
+        data: { email: 'user6@test.com', hash: 'hash6', name: 'User 6' },
       });
 
       await pactum
