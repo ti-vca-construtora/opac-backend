@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { UserDto } from './dtos/user.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -74,6 +75,23 @@ export class UsersService {
     return {
       data: user,
     };
+  }
+
+  async update(id: string, dto: UpdateUserDto) {
+    const { data } = await this.findById(id);
+
+    if (!data) {
+      throw new NotFoundException('Não foi possível encontrar este usuário!');
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: data.id,
+      },
+      data: {
+        ...dto,
+      },
+    });
   }
 
   async delete(id: string) {

@@ -6,11 +6,13 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserDto } from './dtos/user.dto';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -39,5 +41,11 @@ export class UsersController {
   @HttpCode(204)
   delete(@Param('id') id: string) {
     return this.userService.delete(id);
+  }
+
+  @Patch('/:id')
+  @HttpCode(204)
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.userService.update(id, dto);
   }
 }
