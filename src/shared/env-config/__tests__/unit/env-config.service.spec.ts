@@ -19,7 +19,7 @@ describe('EnvConfigService unit tests', () => {
   });
 
   it('should return the variable PORT', () => {
-    expect(sut.getPort()).toBe(3000);
+    expect(sut.getPort()).toBe(3003);
   });
 
   it('should return the variable NODE_ENV', () => {
@@ -28,7 +28,7 @@ describe('EnvConfigService unit tests', () => {
 
   it('should return the variable DATABASE_URL', () => {
     expect(sut.getDatabaseUrl()).toBe(
-      'postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public',
+      'postgresql://test:testpw@localhost:5435/vca-tech-test?schema=public',
     );
   });
 });
