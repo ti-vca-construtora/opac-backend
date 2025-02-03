@@ -89,7 +89,7 @@ export class UsersService {
     }
 
     return {
-      data: new OutputUserPresenter(user),
+      data: user,
     };
   }
 

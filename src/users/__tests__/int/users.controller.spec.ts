@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../../../app.module';
 import { PrismaService } from '../../../shared/prisma/prisma.service';
-import { UserDto } from '../../dtos/create-user.dto';
+import { CreateUserDto } from '../../dtos/create-user.dto';
 import * as pactum from 'pactum';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from '../../../roles/roles.guard';
@@ -82,7 +83,7 @@ describe('UsersController', () => {
             id: user.id,
             name: user.name,
             email: user.email,
-            hash: user.hash,
+            createdAt: new Date(user.createdAt).toISOString(),
           },
         });
     });
@@ -109,14 +110,14 @@ describe('UsersController', () => {
             id: user.id,
             name: user.name,
             email: user.email,
-            hash: user.hash,
+            createdAt: new Date(user.createdAt).toISOString(),
           },
         });
     });
   });
 
   describe('POST /users', () => {
-    const userDto: UserDto = {
+    const userDto: CreateUserDto = {
       email: 'new@test.com',
       name: 'New User',
       password: 'newhash',
@@ -159,9 +160,9 @@ describe('UsersController', () => {
         .expectBody({
           data: {
             email: 'modificado@email.com',
-            hash: user.hash,
             id: user.id,
             name: user.name,
+            createdAt: new Date(user.createdAt).toISOString(),
           },
         });
     });
@@ -186,9 +187,9 @@ describe('UsersController', () => {
         .expectBody({
           data: {
             email: user.email,
-            hash: user.hash,
             id: user.id,
             name: user.name,
+            createdAt: new Date(user.createdAt).toISOString(),
           },
         });
     });
