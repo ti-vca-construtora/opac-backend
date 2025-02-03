@@ -5,9 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../shared/prisma/prisma.service';
-import { UserDto } from './dtos/user.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { OutputUserPresenter } from './presenters/output-user.presenter';
+import { InputUserPresenter } from './presenters/input-user.presenter';
 
 @Injectable()
 export class UsersService {
@@ -29,7 +31,7 @@ export class UsersService {
         total,
         totalPages: Math.ceil(total / pageSize),
         currentPage: page,
-        data: users,
+        data: users.map((user) => new OutputUserPresenter(user)),
       };
     } catch (error) {
       console.error('Falha ao buscar usuários:', error);
@@ -39,16 +41,14 @@ export class UsersService {
     }
   }
 
-  async create(dto: UserDto) {
+  async create(dto: CreateUserDto) {
     try {
       const user = await this.prisma.user.create({
-        data: {
-          ...dto,
-        },
+        data: new InputUserPresenter(dto),
       });
 
       return {
-        data: user,
+        data: new OutputUserPresenter(user),
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -73,7 +73,23 @@ export class UsersService {
     }
 
     return {
-      data: user,
+      data: new OutputUserPresenter(user),
+    };
+  }
+
+  async findByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Não foi possível encontrar este usuário!');
+    }
+
+    return {
+      data: new OutputUserPresenter(user),
     };
   }
 

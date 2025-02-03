@@ -2,8 +2,10 @@ import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../../../app.module';
 import { PrismaService } from '../../../shared/prisma/prisma.service';
-import { UserDto } from '../../dtos/user.dto';
+import { UserDto } from '../../dtos/create-user.dto';
 import * as pactum from 'pactum';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from '../../../roles/roles.guard';
 
 describe('UsersController', () => {
   let app: INestApplication;
@@ -12,6 +14,7 @@ describe('UsersController', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
+      providers: [{ provide: APP_GUARD, useClass: RolesGuard }],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -68,7 +71,34 @@ describe('UsersController', () => {
 
       await pactum
         .spec()
-        .get(`/users/${user.id}`)
+        .get(`/users/id/${user.id}`)
+        .withQueryParams({
+          page: 1,
+          pageSize: 2,
+        })
+        .expectStatus(200)
+        .expectJsonLike({
+          data: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            hash: user.hash,
+          },
+        });
+    });
+
+    it('should return an user by email', async () => {
+      const user = await prisma.user.create({
+        data: {
+          email: 'useremail@test.com',
+          hash: 'hashemail',
+          name: 'User Email',
+        },
+      });
+
+      await pactum
+        .spec()
+        .get(`/users/email/${user.email}`)
         .withQueryParams({
           page: 1,
           pageSize: 2,
@@ -89,7 +119,7 @@ describe('UsersController', () => {
     const userDto: UserDto = {
       email: 'new@test.com',
       name: 'New User',
-      hash: 'newhash',
+      password: 'newhash',
     };
 
     it('should create a new user', async () => {
@@ -124,7 +154,7 @@ describe('UsersController', () => {
 
       await pactum
         .spec()
-        .get(`/users/${user.id}`)
+        .get(`/users/id/${user.id}`)
         .expectStatus(200)
         .expectBody({
           data: {
@@ -151,7 +181,7 @@ describe('UsersController', () => {
 
       await pactum
         .spec()
-        .get(`/users/${user.id}`)
+        .get(`/users/id/${user.id}`)
         .expectStatus(200)
         .expectBody({
           data: {

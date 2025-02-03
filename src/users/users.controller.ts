@@ -11,8 +11,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UserDto } from './dtos/user.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { Role } from '../roles/roles.enum';
+import { Roles } from '../roles/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -26,18 +28,25 @@ export class UsersController {
     return this.userService.getAll(page, pageSize);
   }
 
-  @Get('/:id')
+  @Get('/id/:id')
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
+  @Get('/email/:email')
+  findByEmail(@Param('email') email: string) {
+    return this.userService.findByEmail(email);
+  }
+
   @Post()
+  @Roles(Role.ADMIN)
   @HttpCode(201)
-  create(@Body() dto: UserDto) {
+  create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
   }
 
   @Delete('/:id')
+  @Roles(Role.ADMIN)
   @HttpCode(204)
   delete(@Param('id') id: string) {
     return this.userService.delete(id);

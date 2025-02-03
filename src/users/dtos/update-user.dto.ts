@@ -14,9 +14,9 @@ export class UpdateUserDto {
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ description: 'Hash de senha do usuário' })
+  @ApiProperty({ description: 'Senha do usuário' })
   @IsNotEmpty()
   @IsString()
   @IsOptional()
-  hash?: string;
+  password?: string;
 }
