@@ -13,9 +13,13 @@ import { EnvConfigService } from 'src/shared/env-config/env-config.service';
   imports: [
     UsersModule,
     PassportModule,
-    JwtModule.register({
-      secret: 'VCATECH', // move to environment variables
-      signOptions: { expiresIn: '200s' },
+    JwtModule.registerAsync({
+      imports: [EnvConfigModule],
+      useFactory: (envConfigService: EnvConfigService) => ({
+        secret: envConfigService.getJwtSecret(),
+        signOptions: { expiresIn: '200s' },
+      }),
+      inject: [EnvConfigService],
     }),
     EnvConfigModule,
   ],

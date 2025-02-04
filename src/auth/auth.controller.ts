@@ -20,6 +20,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('protected')
   protected(@Request() req) {
-    return req.user;
+    const { user }: { user: UserOutputDto } = req;
+
+    return user;
   }
 }
