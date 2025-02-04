@@ -16,7 +16,7 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
     ]);
 
-    // does the current user makint the request have those required roles?
+    // does the current user making the request have those required roles?
     return true;
   }
 }

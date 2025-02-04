@@ -9,7 +9,14 @@ import { RolesGuard } from './roles/roles.guard';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [EnvConfigModule.forRoot(), PrismaModule, UsersModule, AuthModule],
+  imports: [
+    EnvConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

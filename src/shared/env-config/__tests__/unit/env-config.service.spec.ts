@@ -31,4 +31,8 @@ describe('EnvConfigService unit tests', () => {
       'postgresql://test:testpw@localhost:5435/vca-tech-test?schema=public',
     );
   });
+
+  it('should return the variable JWT_SECRET', () => {
+    expect(sut.getJwtSecret()).toBe('TEST');
+  });
 });

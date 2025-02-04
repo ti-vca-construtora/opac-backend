@@ -17,4 +17,8 @@ export class EnvConfigService implements EnvConfigInterface {
   getNodeEnv(): string {
     return this.config.get<string>('NODE_ENV') || 'development';
   }
+
+  getJwtSecret(): string {
+    return this.config.get<string>('JWT_SECRET') || '';
+  }
 }
