@@ -1,0 +1,20 @@
+import { DocumentBuilder } from '@nestjs/swagger';
+
+export const swaggerConfig = new DocumentBuilder()
+  .setTitle('API Documentation')
+  .setDescription(
+    'Documentação completa da API para integração com o front-end',
+  )
+  .setVersion('1.0')
+  .addBearerAuth(
+    {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Insira o token JWT no formato: "Bearer {token}"',
+    },
+    'JWT',
+  )
+  .addTag('Auth', 'Operações de autenticação (login, registro, etc.)')
+  .addTag('Users', 'Gerenciamento de usuários')
+  .build();

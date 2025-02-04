@@ -6,7 +6,8 @@ import {
 import { AppModule } from './app.module';
 import { fastifyCors } from '@fastify/cors';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import { swaggerConfig } from './shared/swagger/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -20,21 +21,14 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('VCA Tech API')
-    .setDescription('REST API - Interação com o Portal de Soluções da VCA Tech')
-    .setVersion('1.0.0')
-    .addBearerAuth({
-      description: 'É necessário informar o token para realizar requisições.',
-      name: 'Authorization: Bearer <<token>>',
-      type: 'http',
-      in: 'Header',
-    })
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('api', app, document);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document, {
+    customSiteTitle: 'API Docs',
+    swaggerOptions: {
+      filter: true,
+      persistAuthorization: true,
+    },
+  });
 
   await app.register(fastifyCors, { origin: '*' });
 
