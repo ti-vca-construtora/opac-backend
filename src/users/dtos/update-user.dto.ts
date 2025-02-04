@@ -1,28 +1,35 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Role } from 'src/roles/roles.enum';
 
 export class UpdateUserDto {
-  @ApiProperty({ description: 'E-mail do usuário (e-mail corporativo)' })
+  @ApiPropertyOptional({
+    description: 'E-mail do usuário (e-mail corporativo)',
+  })
   @IsNotEmpty()
   @IsString()
   @IsEmail()
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: 'Nome do usuário (opcional)' })
+  @ApiPropertyOptional({ description: 'Nome do usuário (opcional)' })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ description: 'Senha do usuário' })
+  @ApiPropertyOptional({ description: 'Senha do usuário' })
   @IsNotEmpty()
   @IsString()
   @IsOptional()
   password?: string;
 
-  @ApiProperty({ description: 'Cargos' })
+  @ApiPropertyOptional({ description: 'Cargos' })
   @IsNotEmpty()
   @IsOptional()
   roles?: Role[];
+
+  @ApiPropertyOptional({ description: 'Permissões' })
+  @IsNotEmpty()
+  @IsOptional()
+  permissions?: Role[];
 }

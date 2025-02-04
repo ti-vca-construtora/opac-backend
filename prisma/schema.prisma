@@ -22,6 +22,8 @@ model User {
 
   roles Role[] @default([READER])
 
+  permissions String[]
+
   createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@map("users")

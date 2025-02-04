@@ -14,14 +14,13 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { Role } from '../roles/roles.enum';
-import { Roles } from '../roles/roles.decorator';
-import { Protected } from 'src/shared/protect/protected.guard';
+import { Protected } from 'src/shared/protect/protected.decorator';
 
 @Controller('users')
 export class UsersController {
   constructor(private userService: UsersService) {}
 
-  @Protected(Role.READER)
+  @Protected('', Role.READER)
   @Get()
   getAll(
     @Query('page', ParseIntPipe) page: number = 1,
@@ -30,33 +29,33 @@ export class UsersController {
     return this.userService.getAll(page, pageSize);
   }
 
-  @Protected(Role.READER)
+  @Protected('', Role.READER)
   @Get('/id/:id')
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
-  @Protected(Role.READER)
+  @Protected('', Role.READER)
   @Get('/email/:email')
   findByEmail(@Param('email') email: string) {
     return this.userService.findByEmail(email);
   }
 
-  @Protected(Role.MASTER)
+  @Protected('create_user', Role.MASTER)
   @Post()
   @HttpCode(201)
   create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
   }
 
+  @Protected('delete_user', Role.MASTER)
   @Delete('/:id')
-  @Roles(Role.MASTER)
   @HttpCode(204)
   delete(@Param('id') id: string) {
     return this.userService.delete(id);
   }
 
-  @Protected(Role.MASTER)
+  @Protected('update_user', Role.MASTER)
   @Patch('/:id')
   @HttpCode(204)
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {

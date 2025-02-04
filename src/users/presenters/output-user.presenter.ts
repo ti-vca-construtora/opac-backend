@@ -8,6 +8,7 @@ export class OutputUserPresenter {
   @Transform(({ value }: { value: Date }) => value.toISOString())
   createdAt: Date;
   roles: string[];
+  permissions: string[];
 
   constructor(output: UserOutputDto) {
     this.id = output.id;
@@ -15,5 +16,6 @@ export class OutputUserPresenter {
     this.email = output.email;
     this.createdAt = output.createdAt;
     this.roles = output.roles;
+    this.permissions = output.permissions;
   }
 }

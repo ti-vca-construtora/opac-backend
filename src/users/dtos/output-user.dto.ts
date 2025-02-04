@@ -15,4 +15,7 @@ export class UserOutputDto {
 
   @ApiProperty({ description: 'Cargos do usuário ' })
   roles: string[];
+
+  @ApiProperty({ description: 'Cargos do usuário ' })
+  permissions: string[];
 }

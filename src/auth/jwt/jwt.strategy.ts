@@ -25,11 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     iat: number;
     exp: number;
   }) {
-    console.log('JWT Strategy.validate() chamado com payload: ', payload);
-
     const user = await this.usersService.findById(payload.sub);
-
-    console.log('Usuário encontrado: ', user);
 
     return {
       id: user.data.id,
@@ -37,6 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.data.email,
       createdAt: user.data.createdAt.toISOString(),
       roles: user.data.roles || [],
+      permissions: user.data.permissions || [],
     };
   }
 }

@@ -25,6 +25,8 @@ export class RolesGuard implements CanActivate {
       .switchToHttp()
       .getRequest();
 
+    console.log('RolesGuard: Usuário: ', user);
+
     // enable for MASTER users
     if (user.roles.some((role) => role === 'MASTER')) return true;
 
