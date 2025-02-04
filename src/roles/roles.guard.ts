@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { Role } from './roles.enum';
+import { UserOutputDto } from 'src/users/dtos/output-user.dto';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -16,7 +17,18 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
     ]);
 
+    if (!requireRole) {
+      return true;
+    }
+
+    const { user }: { user: UserOutputDto } = context
+      .switchToHttp()
+      .getRequest();
+
+    // enable for MASTER users
+    if (user.roles.some((role) => role === 'MASTER')) return true;
+
     // does the current user making the request have those required roles?
-    return true;
+    return requireRole.some((role) => user.roles.includes(role));
   }
 }

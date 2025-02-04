@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { UserEntity } from 'src/users/entities/user.entity';
 import { OutputUserPresenter } from 'src/users/presenters/output-user.presenter';
 import { JwtService } from '@nestjs/jwt';
+import { UserOutputDto } from '../users/dtos/output-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +14,7 @@ export class AuthService {
   async validateUser(
     email: string,
     password: string,
-  ): Promise<UserEntity | null> {
+  ): Promise<UserOutputDto | null> {
     const user = await this.usersService.findByEmail(email);
 
     // encrypt given password to match hash

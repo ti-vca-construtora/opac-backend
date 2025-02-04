@@ -20,7 +20,17 @@ model User {
   email String  @unique
   hash  String
 
+  roles Role[] @default([READER])
+
   createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@map("users")
+}
+
+enum Role {
+  MASTER // Administrador
+  APPROVER // Aprovador (Diretoria)
+  CONTROLLER // Controlador
+  ENGINEER // Engenheiro
+  READER // Leitor
 }

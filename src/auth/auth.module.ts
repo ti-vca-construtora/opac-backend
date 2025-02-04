@@ -17,7 +17,7 @@ import { EnvConfigService } from 'src/shared/env-config/env-config.service';
       imports: [EnvConfigModule],
       useFactory: (envConfigService: EnvConfigService) => ({
         secret: envConfigService.getJwtSecret(),
-        signOptions: { expiresIn: '200s' },
+        signOptions: { expiresIn: '10000s' },
       }),
       inject: [EnvConfigService],
     }),

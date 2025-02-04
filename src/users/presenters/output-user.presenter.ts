@@ -7,11 +7,13 @@ export class OutputUserPresenter {
   email: string;
   @Transform(({ value }: { value: Date }) => value.toISOString())
   createdAt: Date;
+  roles: string[];
 
   constructor(output: UserOutputDto) {
     this.id = output.id;
     this.name = output.name || null;
     this.email = output.email;
     this.createdAt = output.createdAt;
+    this.roles = output.roles;
   }
 }

@@ -12,4 +12,7 @@ export class UserOutputDto {
 
   @ApiProperty({ description: 'Nome do usuário (opcional)' })
   name?: string | null;
+
+  @ApiProperty({ description: 'Cargos do usuário ' })
+  roles: string[];
 }
