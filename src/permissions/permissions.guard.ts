@@ -24,6 +24,10 @@ export class PermissionsGuard implements CanActivate {
       .getRequest();
     const user = request.user;
 
+    if (user.roles.includes('MASTER')) {
+      return true;
+    }
+
     if (!user?.permissions) {
       throw new ForbiddenException(
         'Acesso negado: usuário não autenticado ou sem permissões.',
