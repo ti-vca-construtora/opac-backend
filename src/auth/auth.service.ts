@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import { OutputUserPresenter } from 'src/users/presenters/output-user.presenter';
 import { JwtService } from '@nestjs/jwt';
 import { UserOutputDto } from '../users/dtos/output-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -17,15 +18,13 @@ export class AuthService {
   ): Promise<UserOutputDto | null> {
     const user = await this.usersService.findByEmail(email);
 
-    // encrypt given password to match hash
-    if (user.data && user.data.hash === password) {
-      // remove hash property from user - ok
-      // create user presenter - ok
+    if (!user.data) return null;
 
-      return new OutputUserPresenter(user.data);
-    }
+    const isPasswordValid = await bcrypt.compare(password, user.data.hash);
 
-    return null;
+    if (!isPasswordValid) return null;
+
+    return new OutputUserPresenter(user.data);
   }
 
   login(user: { email: string; id: string }) {

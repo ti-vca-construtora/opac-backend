@@ -2,9 +2,7 @@ import { DocumentBuilder } from '@nestjs/swagger';
 
 export const swaggerConfig = new DocumentBuilder()
   .setTitle('API Documentation')
-  .setDescription(
-    'Documentação completa da API para integração com o front-end',
-  )
+  .setDescription('Documentação completa da API')
   .setVersion('1.0')
   .addBearerAuth(
     {

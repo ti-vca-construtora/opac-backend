@@ -143,7 +143,7 @@ export class UsersController {
     return this.userService.findByEmail(email);
   }
 
-  @Protected('create_user', Role.MASTER)
+  // @Protected('create_user', Role.MASTER)
   @Post()
   @HttpCode(201)
   @ApiOperation({

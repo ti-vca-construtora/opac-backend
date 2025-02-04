@@ -10,6 +10,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { OutputUserPresenter } from './presenters/output-user.presenter';
 import { InputUserPresenter } from './presenters/input-user.presenter';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -43,8 +44,13 @@ export class UsersService {
 
   async create(dto: CreateUserDto) {
     try {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
       const user = await this.prisma.user.create({
-        data: new InputUserPresenter(dto),
+        data: new InputUserPresenter({
+          ...dto,
+          password: hashedPassword,
+        }),
       });
 
       return {
