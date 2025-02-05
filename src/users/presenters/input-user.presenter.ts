@@ -4,10 +4,19 @@ export class InputUserPresenter {
   name: string | null;
   email: string;
   hash: string;
+  permissions?: { create: { area: string; permissions: string[] }[] };
 
-  constructor(input: CreateUserDto) {
+  constructor(input: CreateUserDto, hashedPassword: string) {
     this.name = input.name || null;
     this.email = input.email;
-    this.hash = input.password;
+    this.hash = hashedPassword;
+    this.permissions = input.permissions?.length
+      ? {
+          create: input.permissions.map((perm) => ({
+            area: perm.area,
+            permissions: perm.permissions,
+          })),
+        }
+      : undefined;
   }
 }

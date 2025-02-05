@@ -79,23 +79,6 @@ export class PermissionsService {
     };
   }
 
-  // async findAll() {
-  //   return this.prisma.permissions.findMany();
-  // }
-
-  // async findOne(id: string) {
-  //   return this.prisma.permissions.findUnique({
-  //     where: { id },
-  //   });
-  // }
-
-  // async update(id: string, updatePermissionDto: UpdatePermissionDto) {
-  //   return this.prisma.permissions.update({
-  //     where: { id },
-  //     data: updatePermissionDto,
-  //   });
-  // }
-
   async delete(id: string) {
     const { data } = await this.findById(id);
 

@@ -48,12 +48,10 @@ export class UsersService {
   async create(dto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(dto.password, 10);
+      const inputData = new InputUserPresenter(dto, hashedPassword);
 
       const user = await this.prisma.user.create({
-        data: new InputUserPresenter({
-          ...dto,
-          password: hashedPassword,
-        }),
+        data: inputData,
         include: {
           permissions: true,
         },

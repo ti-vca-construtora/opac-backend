@@ -47,8 +47,9 @@ export class PermissionsGuard implements CanActivate {
 
     let hasPermission = false;
 
-    hasPermission = Object.entries(requiredPermissions).some(([setor, perms]) =>
-      userPermissionsBySector[setor]?.some((perm) => perms.includes(perm)),
+    hasPermission = Object.entries(requiredPermissions).some(
+      ([setor, perms]: [string, string[]]) =>
+        userPermissionsBySector[setor]?.some((perm) => perms.includes(perm)),
     );
 
     if (!hasPermission) {
