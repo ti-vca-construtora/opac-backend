@@ -22,17 +22,29 @@ model User {
 
   roles Role[] @default([READER])
 
-  permissions String[]
+  permissions Permissions[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@map("users")
 }
 
+model Permissions {
+  id String @id @default(uuid())
+
+  userId      String
+  area        String
+  permissions String[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("permissions")
+}
+
 enum Role {
-  MASTER // Administrador
-  APPROVER // Aprovador (Diretoria)
-  CONTROLLER // Controlador
-  ENGINEER // Engenheiro
-  READER // Leitor
+  MASTER
+  APPROVER // (Diretoria)
+  CONTROLLER
+  ENGINEER
+  READER
 }

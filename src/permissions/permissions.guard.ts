@@ -6,40 +6,53 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserOutputDto } from 'src/users/dtos/output-user.dto';
+import { PermissionDto } from './dtos/permission.dto';
+import { PrismaService } from 'src/shared/prisma/prisma.service';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiredPermission = this.reflector.get<string>(
-      'permission',
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const requiredPermissions = this.reflector.get<PermissionDto>(
+      'permissions',
       context.getHandler(),
     );
 
-    if (!requiredPermission) return true;
+    if (!requiredPermissions) {
+      return true;
+    }
 
     const request: { user: UserOutputDto } = context
       .switchToHttp()
       .getRequest();
     const user = request.user;
 
-    if (user.roles.includes('MASTER')) {
-      return true;
+    const userWithPermissions = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { permissions: true },
+    });
+
+    if (!userWithPermissions) {
+      throw new ForbiddenException('Usuário não encontrado');
     }
 
-    if (!user?.permissions) {
-      throw new ForbiddenException(
-        'Acesso negado: usuário não autenticado ou sem permissões.',
-      );
-    }
+    const userPermissionsBySector: Record<string, string[]> = {};
+    userWithPermissions.permissions.forEach((p) => {
+      userPermissionsBySector[p.area] = p.permissions;
+    });
 
-    const hasPermission = user.permissions.includes(requiredPermission);
+    let hasPermission = false;
+
+    hasPermission = Object.entries(requiredPermissions).some(([setor, perms]) =>
+      userPermissionsBySector[setor]?.some((perm) => perms.includes(perm)),
+    );
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Acesso negado: permissão "${requiredPermission}" necessária.`,
-      );
+      throw new ForbiddenException('Acesso negado! Permissões insuficientes.');
     }
 
     return true;

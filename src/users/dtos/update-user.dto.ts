@@ -27,9 +27,4 @@ export class UpdateUserDto {
   @IsNotEmpty()
   @IsOptional()
   roles?: Role[];
-
-  @ApiPropertyOptional({ description: 'Permissões' })
-  @IsNotEmpty()
-  @IsOptional()
-  permissions?: Role[];
 }

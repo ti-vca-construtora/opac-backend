@@ -5,6 +5,7 @@ import { PrismaModule } from './shared/prisma/prisma.module';
 import { EnvConfigModule } from './shared/env-config/env-config.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

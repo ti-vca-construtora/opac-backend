@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PermissionDto } from 'src/permissions/dtos/permission.dto';
 
 export class UserOutputDto {
   @ApiProperty({ description: 'ID do usuário' })
@@ -16,6 +17,6 @@ export class UserOutputDto {
   @ApiProperty({ description: 'Cargos do usuário ' })
   roles: string[];
 
-  @ApiProperty({ description: 'Cargos do usuário ' })
-  permissions: string[];
+  @ApiProperty({ description: 'Permissões do usuário ' })
+  permissions: PermissionDto[];
 }

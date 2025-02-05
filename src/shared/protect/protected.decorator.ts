@@ -6,7 +6,10 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { PermissionsGuard } from 'src/permissions/permissions.guard';
 import { Permission } from 'src/permissions/permissions.decorator';
 
-export function Protected(permission: string, ...roles: Role[]) {
+export function Protected(
+  permission: { [area: string]: string[] } | '',
+  ...roles: Role[]
+) {
   return applyDecorators(
     UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard),
     Roles(...roles),

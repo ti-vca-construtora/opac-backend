@@ -24,6 +24,9 @@ export class UsersService {
         this.prisma.user.findMany({
           skip,
           take: pageSize,
+          include: {
+            permissions: true,
+          },
         }),
         this.prisma.user.count(),
       ]);
@@ -51,6 +54,9 @@ export class UsersService {
           ...dto,
           password: hashedPassword,
         }),
+        include: {
+          permissions: true,
+        },
       });
 
       return {
@@ -72,6 +78,9 @@ export class UsersService {
       where: {
         id,
       },
+      include: {
+        permissions: true,
+      },
     });
 
     if (!user) {
@@ -87,6 +96,9 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: {
         email,
+      },
+      include: {
+        permissions: true,
       },
     });
 

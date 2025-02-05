@@ -143,7 +143,7 @@ export class UsersController {
     return this.userService.findByEmail(email);
   }
 
-  @Protected('create_user', Role.MASTER)
+  @Protected({ api: ['create_user'] }, Role.MASTER)
   @Post()
   @HttpCode(201)
   @ApiOperation({
@@ -169,7 +169,7 @@ export class UsersController {
     return this.userService.create(dto);
   }
 
-  @Protected('delete_user', Role.MASTER)
+  @Protected({ api: ['delete_user'] }, Role.MASTER)
   @Delete('/:id')
   @HttpCode(204)
   @ApiOperation({
@@ -186,7 +186,7 @@ export class UsersController {
     return this.userService.delete(id);
   }
 
-  @Protected('update_user', Role.MASTER)
+  @Protected({ api: ['update_user'] }, Role.MASTER)
   @Patch('/:id')
   @HttpCode(204)
   @ApiOperation({
