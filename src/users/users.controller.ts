@@ -25,6 +25,7 @@ import {
   ApiCreatedResponse,
   ApiNoContentResponse,
 } from '@nestjs/swagger';
+import { SwaggerDocs } from 'src/shared/swagger/swagger.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT')
@@ -34,41 +35,18 @@ export class UsersController {
 
   @Protected('', Role.READER)
   @Get()
-  @ApiOperation({
-    summary: 'Listar usuários',
-    description:
-      'Lista todos os usuários com paginação e retorna metadados de paginação (requer permissão de READER)',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'Número da página (default: 1)',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'pageSize',
-    required: false,
-    description: 'Itens por página (default: 20)',
-    example: 20,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de usuários retornada com sucesso',
-    schema: {
-      example: {
-        total: 100,
-        totalPages: 5,
-        currentPage: 1,
-        data: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            createdAt: '2024-02-04T12:34:56.789Z',
-            email: 'usuario@empresa.com',
-            name: 'João Silva',
-            roles: ['MASTER'],
-            permissions: ['create_user', 'delete_user', 'update_user'],
-          },
-        ],
+  @SwaggerDocs({
+    summary: 'Buscar usuário por ID',
+    description: 'Encontra um usuário pelo seu ID e retorna os dados.',
+    requiresPagination: true,
+    successResponse: {
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        createdAt: '2024-02-04T12:34:56.789Z',
+        email: 'usuario@empresa.com',
+        name: 'João Silva',
+        roles: ['MASTER'],
+        permissions: ['create_user', 'delete_user', 'update_user'],
       },
     },
   })
@@ -80,7 +58,7 @@ export class UsersController {
   }
 
   @Protected('', Role.READER)
-  @Get('/id/:id')
+  @Get('/:id')
   @ApiOperation({
     summary: 'Buscar usuário por ID',
     description: 'Encontra um usuário pelo seu ID e retorna os dados.',
@@ -112,12 +90,12 @@ export class UsersController {
   }
 
   @Protected('', Role.READER)
-  @Get('/email/:email')
+  @Get('/email')
   @ApiOperation({
     summary: 'Buscar usuário por e-mail',
     description: 'Encontra um usuário pelo seu e-mail e retorna os dados.',
   })
-  @ApiParam({
+  @ApiQuery({
     name: 'email',
     description: 'E-mail do usuário',
     example: 'usuario@example.com',
@@ -139,7 +117,7 @@ export class UsersController {
     },
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  findByEmail(@Param('email') email: string) {
+  findByEmail(@Query('email') email: string) {
     return this.userService.findByEmail(email);
   }
 

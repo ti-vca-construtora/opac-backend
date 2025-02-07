@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/shared/prisma/prisma.service';
 import { CreatePermissionDto } from './dtos/create-permissions.dto';
-import { DeletePermissionsDto } from './dtos/delete-permissions.dto';
-// import { UpdatePermissionDto } from './dtos/update-permissions.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -79,22 +77,8 @@ export class PermissionsService {
     };
   }
 
-  async delete(id: string) {
+  async update(id: string, permissions: string[]) {
     const { data } = await this.findById(id);
-
-    if (!data) {
-      throw new NotFoundException('Não foi possível encontrar esta permissão!');
-    }
-
-    await this.prisma.user.delete({
-      where: {
-        id: data.id,
-      },
-    });
-  }
-
-  async deleteOne(dto: DeletePermissionsDto) {
-    const { data } = await this.findById(dto.permissionId);
 
     if (!data) {
       throw new NotFoundException('Não foi possível encontrar esta permissão!');
@@ -105,9 +89,21 @@ export class PermissionsService {
         id: data.id,
       },
       data: {
-        permissions:
-          data.permissions.filter((perm) => perm !== dto.permissionToDelete) ||
-          [],
+        permissions: [...permissions],
+      },
+    });
+  }
+
+  async delete(id: string) {
+    const { data } = await this.findById(id);
+
+    if (!data) {
+      throw new NotFoundException('Não foi possível encontrar esta permissão!');
+    }
+
+    await this.prisma.user.delete({
+      where: {
+        id: data.id,
       },
     });
   }

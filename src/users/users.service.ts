@@ -16,7 +16,10 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(page: number = 1, pageSize: number = 20) {
+  async getAll(
+    page: number | undefined = 1,
+    pageSize: number | undefined = 20,
+  ) {
     try {
       const skip = (page - 1) * pageSize;
 
@@ -110,15 +113,11 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    const { data } = await this.findById(id);
-
-    if (!data) {
-      throw new NotFoundException('Não foi possível encontrar este usuário!');
-    }
+    await this.findById(id);
 
     await this.prisma.user.update({
       where: {
-        id: data.id,
+        id: id,
       },
       data: {
         ...dto,
@@ -127,15 +126,11 @@ export class UsersService {
   }
 
   async delete(id: string) {
-    const { data } = await this.findById(id);
-
-    if (!data) {
-      throw new NotFoundException('Não foi possível encontrar este usuário!');
-    }
+    await this.findById(id);
 
     await this.prisma.user.delete({
       where: {
-        id: data.id,
+        id: id,
       },
     });
   }

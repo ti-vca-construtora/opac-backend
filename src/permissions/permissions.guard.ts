@@ -40,6 +40,10 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Usuário não encontrado');
     }
 
+    if (userWithPermissions.roles.includes('MASTER')) {
+      return true;
+    }
+
     const userPermissionsBySector: Record<string, string[]> = {};
     userWithPermissions.permissions.forEach((p) => {
       userPermissionsBySector[p.area] = p.permissions;

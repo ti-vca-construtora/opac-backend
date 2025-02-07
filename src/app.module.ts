@@ -6,6 +6,7 @@ import { EnvConfigModule } from './shared/env-config/env-config.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     UsersModule,
     AuthModule,
     PermissionsModule,
+    EmpreendimentosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -29,6 +29,14 @@ model User {
   @@map("users")
 }
 
+enum Role {
+  MASTER
+  APPROVER // (Diretoria)
+  CONTROLLER
+  ENGINEER
+  READER
+}
+
 model Permissions {
   id String @id @default(uuid())
 
@@ -41,10 +49,21 @@ model Permissions {
   @@map("permissions")
 }
 
-enum Role {
-  MASTER
-  APPROVER // (Diretoria)
-  CONTROLLER
-  ENGINEER
-  READER
+model Empreendimento {
+  id String @id @default(uuid())
+
+  nome String
+  cnpj String
+
+  tipo String?
+
+  cidade String
+  uf     String
+
+  entregaData DateTime?
+
+  cheque     String?
+  chequeData String?
+
+  @@map("empreendimentos")
 }
