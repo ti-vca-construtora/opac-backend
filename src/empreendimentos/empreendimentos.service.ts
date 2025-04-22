@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -6,13 +7,28 @@ import {
 import { PrismaService } from '../shared/prisma/prisma.service';
 import { CreateEmpreendimentoDto } from './dtos/create-empreendimento.dto';
 import { UpdateEmpreendimentoDto } from './dtos/update-empreendimento.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class EmpreendimentosService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateEmpreendimentoDto) {
-    return this.prisma.empreendimento.create({ data });
+    try {
+      const empreendimento = await this.prisma.empreendimento.create({ data });
+
+      return {
+        data: empreendimento,
+      };
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ForbiddenException(
+            'Já existe um empreendimento com este CNPJ',
+          );
+        }
+      }
+    }
   }
 
   async getAll(
@@ -54,7 +70,7 @@ export class EmpreendimentosService {
         'Não foi possível encontrar este empreendimento.',
       );
 
-    return empreendimento;
+    return { data: empreendimento };
   }
 
   async update(id: string, data: UpdateEmpreendimentoDto) {
@@ -66,6 +82,6 @@ export class EmpreendimentosService {
   async delete(id: string) {
     await this.findById(id);
 
-    return this.prisma.empreendimento.delete({ where: { id } });
+    await this.prisma.empreendimento.delete({ where: { id } });
   }
 }

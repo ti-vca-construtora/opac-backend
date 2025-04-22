@@ -9,13 +9,19 @@ import {
   Patch,
 } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CreatePermissionDto } from './dtos/create-permissions.dto';
 import { Protected } from 'src/shared/protect/protected.decorator';
 import { Role } from 'src/roles/roles.enum';
 import { UpdatePermissionDto } from './dtos/update-permissions.dto';
 
 @ApiTags('Permissions')
+@ApiBearerAuth('JWT')
 @Controller('permissions')
 export class PermissionsController {
   constructor(private permissionsService: PermissionsService) {}

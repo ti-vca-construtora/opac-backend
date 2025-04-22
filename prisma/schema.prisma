@@ -53,7 +53,7 @@ model Empreendimento {
   id String @id @default(uuid())
 
   nome String
-  cnpj String
+  cnpj String @unique
 
   tipo String?
 

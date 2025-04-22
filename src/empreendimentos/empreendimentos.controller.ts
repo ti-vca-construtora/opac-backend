@@ -8,17 +8,26 @@ import {
   Delete,
 } from '@nestjs/common';
 import { EmpreendimentosService } from './empreendimentos.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CreateEmpreendimentoDto } from './dtos/create-empreendimento.dto';
 import { UpdateEmpreendimentoDto } from './dtos/update-empreendimento.dto';
+import { Protected } from 'src/shared/protect/protected.decorator';
+import { Role } from 'src/roles/roles.enum';
 
 @ApiTags('Empreendimentos')
+@ApiBearerAuth('JWT')
 @Controller('empreendimentos')
 export class EmpreendimentosController {
   constructor(
     private readonly empreendimentosService: EmpreendimentosService,
   ) {}
 
+  @Protected({ api: ['create_empreendimento'] }, Role.MASTER)
   @Post()
   @ApiOperation({ summary: 'Criar um novo empreendimento' })
   @ApiResponse({
@@ -29,6 +38,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.create(dto);
   }
 
+  @Protected('', Role.READER)
   @Get()
   @ApiOperation({ summary: 'Listar todos os empreendimentos' })
   @ApiResponse({
@@ -39,6 +49,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.getAll();
   }
 
+  @Protected('', Role.READER)
   @Get(':id')
   @ApiOperation({ summary: 'Buscar um empreendimento pelo ID' })
   @ApiResponse({ status: 200, description: 'Empreendimento encontrado' })
@@ -47,6 +58,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.findById(id);
   }
 
+  @Protected({ api: ['update_empreendimento'] }, Role.MASTER)
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um empreendimento' })
   @ApiResponse({
@@ -58,6 +70,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.update(id, dto);
   }
 
+  @Protected({ api: ['delete_empreendimento'] }, Role.MASTER)
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um empreendimento' })
   @ApiResponse({
