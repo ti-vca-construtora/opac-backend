@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module';
+import { InccModule } from './incc/incc.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module'
     AuthModule,
     PermissionsModule,
     EmpreendimentosModule,
+    InccModule,
   ],
   controllers: [AppController],
   providers: [AppService],

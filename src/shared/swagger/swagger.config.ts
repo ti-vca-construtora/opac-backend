@@ -17,4 +17,5 @@ export const swaggerConfig = new DocumentBuilder()
   .addTag('Users', 'Gerenciamento de usuários')
   .addTag('Permissions', 'Gerenciamento de permissões ABAC')
   .addTag('Empreendimentos', 'Gerenciamento de empreendimentos')
+  .addTag('INCC', 'Gerenciamento de INCC')
   .build();

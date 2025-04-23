@@ -67,3 +67,18 @@ model Empreendimento {
 
   @@map("empreendimentos")
 }
+
+model Incc {
+  id String @id @default(uuid())
+
+  mes Int
+  ano Int
+
+  incc Float
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([mes, ano])
+  @@map("incc")
+}
