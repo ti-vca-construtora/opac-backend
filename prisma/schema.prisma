@@ -24,7 +24,8 @@ model User {
 
   permissions Permissions[]
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
+  Empreendimento Empreendimento[]
 
   @@map("users")
 }
@@ -54,6 +55,9 @@ model Empreendimento {
 
   nome String
   cnpj String @unique
+
+  engenheiroId String
+  engenheiro   User   @relation(fields: [engenheiroId], references: [id])
 
   tipo String?
 

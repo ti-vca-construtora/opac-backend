@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -46,15 +47,21 @@ export class UsersController {
         email: 'usuario@empresa.com',
         name: 'João Silva',
         roles: ['MASTER'],
-        permissions: ['create_user', 'delete_user', 'update_user'],
+        permissions: [
+          {
+            area: 'api',
+            permissions: ['create_user, delete_user, update_user'],
+          },
+        ],
       },
     },
   })
   getAll(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('pageSize', ParseIntPipe) pageSize: number = 20,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number,
+    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize: number,
+    @Query('role', new ParseEnumPipe(Role, { optional: true })) role?: Role,
   ) {
-    return this.userService.getAll(page, pageSize);
+    return this.userService.getAll({ page, pageSize, role });
   }
 
   @Protected('', Role.READER)
@@ -79,7 +86,12 @@ export class UsersController {
           email: 'usuario@empresa.com',
           name: 'João Silva',
           roles: ['MASTER'],
-          permissions: ['create_user', 'delete_user', 'update_user'],
+          permissions: [
+            {
+              area: 'api',
+              permissions: ['create_user, delete_user, update_user'],
+            },
+          ],
         },
       },
     },
@@ -111,7 +123,12 @@ export class UsersController {
           email: 'usuario@empresa.com',
           name: 'João Silva',
           roles: ['MASTER'],
-          permissions: ['create_user', 'delete_user', 'update_user'],
+          permissions: [
+            {
+              area: 'api',
+              permissions: ['create_user, delete_user, update_user'],
+            },
+          ],
         },
       },
     },
@@ -138,7 +155,12 @@ export class UsersController {
           email: 'usuario@empresa.com',
           name: 'João Silva',
           roles: ['MASTER'],
-          permissions: ['create_user', 'delete_user', 'update_user'],
+          permissions: [
+            {
+              area: 'api',
+              permissions: ['create_user, delete_user, update_user'],
+            },
+          ],
         },
       },
     },

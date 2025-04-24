@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsNumberString,
   Length,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateEmpreendimentoDto {
@@ -22,6 +23,14 @@ export class CreateEmpreendimentoDto {
   @IsNumberString()
   @Length(14, 14)
   cnpj: string;
+
+  @ApiProperty({
+    description: 'ID do engenheiro responsável',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsString()
+  @IsUUID()
+  engenheiroId: string;
 
   @ApiPropertyOptional({
     description: 'Tipo do empreendimento',

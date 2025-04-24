@@ -11,27 +11,36 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { OutputUserPresenter } from './presenters/output-user.presenter';
 import { InputUserPresenter } from './presenters/input-user.presenter';
 import * as bcrypt from 'bcrypt';
+import { Role } from 'src/roles/roles.enum';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(
-    page: number | undefined = 1,
-    pageSize: number | undefined = 20,
-  ) {
+  async getAll({
+    page = 1,
+    pageSize = 20,
+    role = undefined,
+  }: {
+    page?: number;
+    pageSize?: number;
+    role?: Role;
+  }) {
     try {
       const skip = (page - 1) * pageSize;
 
       const [users, total] = await this.prisma.$transaction([
         this.prisma.user.findMany({
+          where: role ? { roles: { has: role } } : undefined,
           skip,
           take: pageSize,
           include: {
             permissions: true,
           },
         }),
-        this.prisma.user.count(),
+        this.prisma.user.count({
+          where: role ? { roles: { has: role } } : undefined,
+        }),
       ]);
 
       return {
