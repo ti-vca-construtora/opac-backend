@@ -67,7 +67,7 @@ model Empreendimento {
   entregaData DateTime?
 
   cheque     String?
-  chequeData String?
+  chequeData DateTime?
 
   @@map("empreendimentos")
 }

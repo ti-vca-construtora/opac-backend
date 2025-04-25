@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
-  IsDateString,
   IsNumberString,
   Length,
   IsUUID,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateEmpreendimentoDto {
@@ -59,11 +59,11 @@ export class CreateEmpreendimentoDto {
 
   @ApiPropertyOptional({
     description: 'Data prevista para entrega',
-    example: '2025-12-31',
+    example: '2025-04-25T00:00:00.000Z',
   })
   @IsOptional()
   @IsDateString()
-  entregaData?: Date;
+  entregaData?: string;
 
   @ApiPropertyOptional({
     description: 'Cheque associado ao empreendimento',
@@ -73,8 +73,11 @@ export class CreateEmpreendimentoDto {
   @IsString()
   cheque?: string;
 
-  @ApiPropertyOptional({ description: 'Data do cheque', example: '2024-06-15' })
+  @ApiPropertyOptional({
+    description: 'Data do cheque',
+    example: '2025-04-25T00:00:00.000Z',
+  })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   chequeData?: string;
 }
