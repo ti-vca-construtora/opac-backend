@@ -72,6 +72,46 @@ model Empreendimento {
   @@map("empreendimentos")
 }
 
+model Ano {
+  id    String @id @default(uuid())
+  ano   Int    @unique // Ex: 2025
+  meses Mes[]
+
+  @@map("anos")
+}
+
+model Mes {
+  id      String   @id @default(uuid())
+  numero  Int // Ex: 8
+  label   String // "Agosto"
+  anoId   String
+  ano     Ano      @relation(fields: [anoId], references: [id])
+  semanas Semana[]
+
+  @@map("meses")
+}
+
+model Semana {
+  id     String @id @default(uuid())
+  numero Int // Ex: 2
+  label  String // "2ª semana"
+  mesId  String
+  mes    Mes    @relation(fields: [mesId], references: [id])
+  dias   Dia[]
+
+  @@map("semanas")
+}
+
+model Dia {
+  id       String   @id @default(uuid())
+  numero   Int // Ex: 15
+  data     DateTime
+  semanaId String
+  semana   Semana   @relation(fields: [semanaId], references: [id])
+
+  @@map("dias")
+}
+
 model Incc {
   id String @id @default(uuid())
 
