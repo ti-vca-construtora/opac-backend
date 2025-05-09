@@ -62,7 +62,11 @@ export class MesesService {
   }
 
   async getAll() {
-    const meses = await this.prisma.mes.findMany();
+    const meses = await this.prisma.mes.findMany({
+      include: {
+        semanas: true,
+      },
+    });
 
     return {
       data: meses,
