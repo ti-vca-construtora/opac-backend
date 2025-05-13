@@ -4,6 +4,6 @@ import { SemanasController } from './semanas.controller';
 
 @Module({
   providers: [SemanasService],
-  controllers: [SemanasController]
+  controllers: [SemanasController],
 })
 export class SemanasModule {}

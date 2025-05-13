@@ -23,7 +23,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'API Docs',
+    customSiteTitle: 'OPAC - API Docs',
     swaggerOptions: {
       filter: true,
       persistAuthorization: true,

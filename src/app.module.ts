@@ -9,6 +9,7 @@ import { InccModule } from './incc/incc.module';
 import { AnosModule } from './anos/anos.module';
 import { MesesModule } from './meses/meses.module';
 import { SemanasModule } from './semanas/semanas.module';
+import { DiasModule } from './dias/dias.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SemanasModule } from './semanas/semanas.module';
     AnosModule,
     MesesModule,
     SemanasModule,
+    DiasModule,
   ],
 })
 export class AppModule {}
