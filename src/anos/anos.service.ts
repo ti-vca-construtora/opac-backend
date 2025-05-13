@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/shared/prisma/prisma.service';
 import { CreateAnoDto } from './dtos/create-ano.dto';
 
@@ -35,6 +39,14 @@ export class AnosService {
   }
 
   async create(dto: CreateAnoDto) {
+    const exists = await this.prisma.ano.findFirst({
+      where: { ano: dto.ano },
+    });
+
+    if (exists) {
+      throw new ConflictException('Este ano já está cadastrado');
+    }
+
     const ano = await this.prisma.ano.create({
       data: dto,
     });

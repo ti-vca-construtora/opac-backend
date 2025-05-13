@@ -18,4 +18,7 @@ export const swaggerConfig = new DocumentBuilder()
   .addTag('Permissions', 'Gerenciamento de permissões ABAC')
   .addTag('Empreendimentos', 'Gerenciamento de empreendimentos')
   .addTag('INCC', 'Gerenciamento de INCC')
+  .addTag('Semanas', 'Gerenciamento de semanas do semanômetro')
+  .addTag('Meses', 'Gerenciamento de meses do semanômetro')
+  .addTag('Anos', 'Gerenciamento de anos do semanômetro')
   .build();
