@@ -2,6 +2,5 @@ export enum Role {
   MASTER = 'MASTER',
   APPROVER = 'APPROVER',
   CONTROLLER = 'CONTROLLER',
-  ENGINEER = 'ENGINEER',
   READER = 'READER',
 }

@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsNumberString,
   Length,
+  IsNumber,
 } from 'class-validator';
 
 export class UpdateEmpreendimentoDto {
@@ -60,16 +61,48 @@ export class UpdateEmpreendimentoDto {
   @IsDateString()
   entregaData?: Date;
 
-  @ApiPropertyOptional({
-    description: 'Cheque associado ao empreendimento',
-    example: '123456',
-  })
-  @IsOptional()
-  @IsString()
-  cheque?: string;
-
   @ApiPropertyOptional({ description: 'Data do cheque', example: '2024-06-15' })
   @IsOptional()
   @IsString()
   chequeData?: string;
+
+  @ApiPropertyOptional({
+    description: 'FRE - Custos de obra',
+    example: 10000000.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  custoObra?: number;
+
+  @ApiPropertyOptional({
+    description: 'FRE - Custos Adicionais',
+    example: 10000000.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  custosAdicionais?: number;
+
+  @ApiPropertyOptional({
+    description: 'FRE - Custos de terreno',
+    example: 10000000.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  custoTerreno?: number;
+
+  @ApiPropertyOptional({
+    description: 'Valor do cheque associado ao empreendimento',
+    example: 10000000.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  chequeValor?: number;
+
+  @ApiPropertyOptional({
+    description: 'Valor do orçamento executivo associado ao empreendimento',
+    example: 10000000.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  orcamentoExecutivo?: number;
 }

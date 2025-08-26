@@ -4,11 +4,18 @@ import {
   IsOptional,
   IsNumberString,
   Length,
-  IsUUID,
   IsDateString,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateEmpreendimentoDto {
+  @ApiProperty({
+    description: 'ID do empreendimento no Sienge',
+    example: 11,
+  })
+  @IsNumber()
+  idSienge: number;
+
   @ApiProperty({
     description: 'Nome do empreendimento',
     example: 'Residencial Alpha',
@@ -23,14 +30,6 @@ export class CreateEmpreendimentoDto {
   @IsNumberString()
   @Length(14, 14)
   cnpj: string;
-
-  @ApiProperty({
-    description: 'ID do engenheiro responsável',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @IsString()
-  @IsUUID()
-  engenheiroId: string;
 
   @ApiPropertyOptional({
     description: 'Tipo do empreendimento',
@@ -65,19 +64,45 @@ export class CreateEmpreendimentoDto {
   @IsDateString()
   entregaData?: string;
 
-  @ApiPropertyOptional({
-    description: 'Cheque associado ao empreendimento',
-    example: '123456',
+  @ApiProperty({
+    description: 'FRE - Custos de obra',
+    example: 10000000.0,
   })
-  @IsOptional()
-  @IsString()
-  cheque?: string;
+  @IsNumber()
+  custoObra: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
+    description: 'FRE - Custos Adicionais',
+    example: 10000000.0,
+  })
+  @IsNumber()
+  custosAdicionais: number;
+
+  @ApiProperty({
+    description: 'FRE - Custos de terreno',
+    example: 10000000.0,
+  })
+  @IsNumber()
+  custoTerreno: number;
+
+  @ApiProperty({
+    description: 'Valor do cheque associado ao empreendimento',
+    example: 10000000.0,
+  })
+  @IsNumber()
+  chequeValor: number;
+
+  @ApiProperty({
     description: 'Data do cheque',
     example: '2025-04-25T00:00:00.000Z',
   })
-  @IsOptional()
   @IsDateString()
-  chequeData?: string;
+  chequeData: string;
+
+  @ApiProperty({
+    description: 'Valor do orçamento executivo associado ao empreendimento',
+    example: 10000000.0,
+  })
+  @IsNumber()
+  orcamentoExecutivo: number;
 }

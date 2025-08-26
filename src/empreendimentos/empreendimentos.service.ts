@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -9,7 +8,6 @@ import { PrismaService } from '../shared/prisma/prisma.service';
 import { CreateEmpreendimentoDto } from './dtos/create-empreendimento.dto';
 import { UpdateEmpreendimentoDto } from './dtos/update-empreendimento.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { Role } from 'src/roles/roles.enum';
 
 @Injectable()
 export class EmpreendimentosService {
@@ -17,35 +15,8 @@ export class EmpreendimentosService {
 
   async create(data: CreateEmpreendimentoDto) {
     try {
-      const { engenheiroId, ...rest } = data;
-
-      const engineer = await this.prisma.user.findUnique({
-        where: {
-          id: engenheiroId,
-        },
-      });
-
-      if (!engineer) {
-        throw new BadRequestException(
-          'O id fornecido não pertence a nenhum usuário',
-        );
-      }
-
-      if (!engineer?.roles.includes(Role.ENGINEER)) {
-        throw new BadRequestException(
-          'O id fornecido deve ser de um usuário engenheiro',
-        );
-      }
-
       const empreendimento = await this.prisma.empreendimento.create({
-        data: {
-          ...rest,
-          engenheiro: {
-            connect: {
-              id: engineer.id,
-            },
-          },
-        },
+        data,
       });
 
       return {
@@ -76,15 +47,7 @@ export class EmpreendimentosService {
           skip,
           take: pageSize,
           include: {
-            engenheiro: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                roles: true,
-                permissions: true,
-              },
-            },
+            medicaoMensal: true,
           },
         }),
         this.prisma.empreendimento.count(),
@@ -119,6 +82,8 @@ export class EmpreendimentosService {
 
   async update(id: string, data: UpdateEmpreendimentoDto) {
     await this.findById(id);
+
+    console.log(data);
 
     return this.prisma.empreendimento.update({ where: { id }, data });
   }

@@ -1,14 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Request, Res, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './auth-local.guard';
 import { AuthService } from './auth.service';
 import { UserOutputDto } from 'src/users/dtos/output-user.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Response } from 'express';
+import { EnvConfigService } from 'src/shared/env-config/env-config.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: EnvConfigService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -35,9 +39,34 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
-  login(@Request() req) {
-    const { user }: { user: UserOutputDto } = req;
+  login(
+    @Request() req: { user: UserOutputDto },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user } = req;
+    const { access_token } = this.authService.login(user);
 
-    return this.authService.login(user);
+    console.log(user);
+
+    res.cookie('opac_access_token', access_token, {
+      httpOnly: false,
+      secure: this.configService.getNodeEnv() === 'production',
+      sameSite:
+        this.configService.getNodeEnv() === 'production' ? 'strict' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 1 DIA
+      domain:
+        this.configService.getNodeEnv() === 'development'
+          ? 'localhost'
+          : undefined,
+    });
+
+    return { access_token };
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('opac_access_token');
+
+    return { message: 'Logout realizado com sucesso' };
   }
 }

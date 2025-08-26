@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "medicao_mensal" ADD COLUMN     "ano" INTEGER NOT NULL DEFAULT 2999,
+ADD COLUMN     "mes" INTEGER NOT NULL DEFAULT 1;

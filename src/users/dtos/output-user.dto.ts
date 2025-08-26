@@ -8,6 +8,9 @@ export class UserOutputDto {
   @ApiProperty({ description: 'Data de criação do usuário' })
   createdAt: Date;
 
+  @ApiProperty({ description: 'Data de modificação do usuário' })
+  updatedAt: Date;
+
   @ApiProperty({ description: 'E-mail do usuário (e-mail corporativo)' })
   email: string;
 
@@ -19,4 +22,7 @@ export class UserOutputDto {
 
   @ApiProperty({ description: 'Permissões do usuário ' })
   permissions: PermissionDto[];
+
+  @ApiProperty({ description: 'Status do usuário' })
+  isActive: boolean;
 }

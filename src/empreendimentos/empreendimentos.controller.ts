@@ -27,7 +27,7 @@ export class EmpreendimentosController {
     private readonly empreendimentosService: EmpreendimentosService,
   ) {}
 
-  @Protected({ api: ['create_empreendimento'] }, Role.ENGINEER)
+  @Protected({ api: ['create_empreendimento'] }, Role.READER)
   @Post()
   @ApiOperation({ summary: 'Criar um novo empreendimento' })
   @ApiResponse({

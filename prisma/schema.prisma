@@ -20,12 +20,14 @@ model User {
   email String  @unique
   hash  String
 
+  isActive Boolean @default(true)
+
   roles Role[] @default([READER])
 
   permissions Permissions[]
 
-  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
-  Empreendimento Empreendimento[]
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@map("users")
 }
@@ -34,7 +36,6 @@ enum Role {
   MASTER
   APPROVER // (Diretoria)
   CONTROLLER
-  ENGINEER
   READER
 }
 
@@ -51,13 +52,11 @@ model Permissions {
 }
 
 model Empreendimento {
-  id String @id @default(uuid())
+  id       String @id @default(uuid())
+  idSienge Int    @unique
 
   nome String
   cnpj String @unique
-
-  engenheiroId String
-  engenheiro   User   @relation(fields: [engenheiroId], references: [id])
 
   tipo String?
 
@@ -66,50 +65,20 @@ model Empreendimento {
 
   entregaData DateTime?
 
-  cheque     String?
-  chequeData DateTime?
+  custoObra        Decimal  @db.Decimal(15, 2)
+  custosAdicionais Decimal  @db.Decimal(15, 2)
+  custoTerreno     Decimal  @db.Decimal(15, 2)
+  chequeValor      Decimal  @db.Decimal(15, 2)
+  chequeData       DateTime
+
+  orcamentoExecutivo Decimal? @db.Decimal(15, 2)
+
+  dataInicioObra DateTime?
+  dataFimObra    DateTime?
+
+  medicaoMensal MedicaoMensal[]
 
   @@map("empreendimentos")
-}
-
-model Ano {
-  id    String @id @default(uuid())
-  ano   Int    @unique // Ex: 2025
-  meses Mes[]
-
-  @@map("anos")
-}
-
-model Mes {
-  id      String   @id @default(uuid())
-  numero  Int // Ex: 8
-  label   String // "Agosto"
-  anoId   String
-  ano     Ano      @relation(fields: [anoId], references: [id])
-  semanas Semana[]
-
-  @@map("meses")
-}
-
-model Semana {
-  id     String @id @default(uuid())
-  numero Int // Ex: 2
-  label  String // "2ª semana"
-  mesId  String
-  mes    Mes    @relation(fields: [mesId], references: [id])
-  dias   Dia[]
-
-  @@map("semanas")
-}
-
-model Dia {
-  id       String   @id @default(uuid())
-  numero   Int // Ex: 15
-  data     DateTime
-  semanaId String
-  semana   Semana   @relation(fields: [semanaId], references: [id])
-
-  @@map("dias")
 }
 
 model Incc {
@@ -125,4 +94,26 @@ model Incc {
 
   @@unique([mes, ano])
   @@map("incc")
+}
+
+model MedicaoMensal {
+  id       String @id @default(uuid())
+  idSienge Int
+
+  totalDistorcoes    Decimal @db.Decimal(15, 2)
+  totalCustoPorNivel Decimal @db.Decimal(15, 2)
+  totalEstoque       Decimal @db.Decimal(15, 2)
+  totalMedicoes      Decimal @db.Decimal(15, 2)
+  custoIncorrido     Decimal @db.Decimal(15, 2)
+
+  empreendimentoId String
+  empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])
+
+  mes Int @default(1)
+  ano Int @default(2999)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("medicao_mensal")
 }

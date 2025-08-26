@@ -6,10 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module';
 import { InccModule } from './incc/incc.module';
-import { AnosModule } from './anos/anos.module';
-import { MesesModule } from './meses/meses.module';
-import { SemanasModule } from './semanas/semanas.module';
-import { DiasModule } from './dias/dias.module';
+import { MedicaoMensalModule } from './medicao-mensal/medicao-mensal.module';
 
 @Module({
   imports: [
@@ -22,10 +19,7 @@ import { DiasModule } from './dias/dias.module';
     PermissionsModule,
     EmpreendimentosModule,
     InccModule,
-    AnosModule,
-    MesesModule,
-    SemanasModule,
-    DiasModule,
+    MedicaoMensalModule,
   ],
 })
 export class AppModule {}

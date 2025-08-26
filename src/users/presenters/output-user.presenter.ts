@@ -10,6 +10,8 @@ export class OutputUserPresenter {
   createdAt: Date;
   roles: string[];
   permissions: PermissionDto[];
+  isActive: boolean;
+  updatedAt: Date;
 
   constructor(output: UserOutputDto) {
     this.id = output.id;
@@ -18,5 +20,7 @@ export class OutputUserPresenter {
     this.createdAt = output.createdAt;
     this.roles = output.roles;
     this.permissions = output.permissions;
+    this.isActive = output.isActive;
+    this.updatedAt = output.updatedAt;
   }
 }
