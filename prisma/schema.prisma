@@ -97,14 +97,25 @@ model Incc {
 }
 
 model MedicaoMensal {
-  id       String @id @default(uuid())
-  idSienge Int
-
+  id                 String  @id @default(uuid())
+  idSienge           Int
   totalDistorcoes    Decimal @db.Decimal(15, 2)
   totalCustoPorNivel Decimal @db.Decimal(15, 2)
   totalEstoque       Decimal @db.Decimal(15, 2)
   totalMedicoes      Decimal @db.Decimal(15, 2)
   custoIncorrido     Decimal @db.Decimal(15, 2)
+
+  gasto              Decimal? @db.Decimal(15, 2) // Custo incorrido do mês (atual - anterior)
+  incc               Float? // Percentual do INCC do mês
+  totalGasto         Decimal? @db.Decimal(15, 2) // Custo incorrido acumulado
+  aGastar            Decimal? @db.Decimal(15, 2) // Valor restante a gastar (antes do INCC)
+  aditivo            Decimal? @db.Decimal(15, 2) // Valor de aditivos
+  aGastarAtualizado  Decimal? @db.Decimal(15, 2) // Valor a gastar corrigido pelo INCC
+  orcamentoCorrigido Decimal? @db.Decimal(15, 2) // Orçamento total corrigido
+  evolucaoMes        Float? // Evolução percentual do mês
+  evolucaoTotal      Float? // Evolução percentual acumulada
+  baseCalculo        String?  @default("CHEQUE") // Base em que foi feito o cálculo (valor do cheque ou orçamento executivo)
+  ampFisico          Float? // Evolução física para comparação com a evolução financeira
 
   empreendimentoId String
   empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])
