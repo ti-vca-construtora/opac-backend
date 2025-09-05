@@ -29,6 +29,8 @@ model User {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt
 
+  aprovacao Aprovacao[]
+
   @@map("users")
 }
 
@@ -77,6 +79,8 @@ model Empreendimento {
   dataFimObra    DateTime?
 
   medicaoMensal MedicaoMensal[]
+  aditivo       Aditivo[]
+  Aprovacao     Aprovacao[]
 
   @@map("empreendimentos")
 }
@@ -115,7 +119,8 @@ model MedicaoMensal {
   evolucaoMes        Float? // Evolução percentual do mês
   evolucaoTotal      Float? // Evolução percentual acumulada
   baseCalculo        String?  @default("CHEQUE") // Base em que foi feito o cálculo (valor do cheque ou orçamento executivo)
-  ampFisico          Float? // Evolução física para comparação com a evolução financeira
+  ampFisicoTotal     Float? // Evolução física total
+  ampFisicoMes       Float? // Evolução física do mês
 
   empreendimentoId String
   empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])
@@ -127,4 +132,49 @@ model MedicaoMensal {
   updatedAt DateTime @updatedAt
 
   @@map("medicao_mensal")
+}
+
+model Aprovacao {
+  id String @id @default(uuid())
+
+  type String // EXECUTIVO ou ADITIVO
+
+  valor     Decimal @db.Decimal(15, 2)
+  obs       String? // Observações
+  anexoLink String? // URL do anexo
+
+  approved Boolean @default(false)
+
+  mes Int?
+  ano Int?
+
+  userId    String
+  createdBy User   @relation(fields: [userId], references: [id])
+
+  empreendimentoId String
+  empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("aprovacoes")
+}
+
+model Aditivo {
+  id String @id @default(uuid())
+
+  aditivo   Decimal @db.Decimal(15, 2) // Valor do aditivo
+  obs       String? // Observações
+  anexoLink String? // URL do anexo
+
+  mes Int
+  ano Int
+
+  empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])
+  empreendimentoId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("aditivos")
 }

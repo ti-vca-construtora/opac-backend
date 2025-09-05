@@ -48,6 +48,8 @@ export class EmpreendimentosService {
           take: pageSize,
           include: {
             medicaoMensal: true,
+            Aprovacao: true,
+            aditivo: true,
           },
         }),
         this.prisma.empreendimento.count(),

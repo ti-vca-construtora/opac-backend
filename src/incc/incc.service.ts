@@ -27,6 +27,10 @@ export class InccService {
         this.prismaService.incc.findMany({
           skip,
           take: pageSize,
+          orderBy: [
+            { ano: 'desc' }, // Ordena anos do maior para o menor
+            { mes: 'desc' }, // Ordena meses do maior para o menor
+          ],
         }),
         this.prismaService.incc.count(),
       ]);

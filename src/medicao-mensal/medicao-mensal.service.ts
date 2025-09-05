@@ -70,6 +70,20 @@ export class MedicaoMensalService {
       );
     }
 
+    // Buscar aditivos para este mês/ano
+    const aditivos = await this.prisma.aditivo.findMany({
+      where: {
+        empreendimentoId: empreendimento.id,
+        mes: dto.mes,
+        ano: dto.ano,
+      },
+    });
+
+    const totalAditivos = aditivos.reduce(
+      (sum, aditivo) => sum.plus(new Decimal(aditivo.aditivo.toString())),
+      new Decimal(0),
+    );
+
     // Calcular campos derivados
     const custoIncorrido = new Decimal(dto.custoIncorrido);
     const custoAnterior = medicaoAnterior
@@ -82,61 +96,53 @@ export class MedicaoMensalService {
     // 2. Total gasto = custoIncorrido (acumulado)
     const totalGasto = custoIncorrido;
 
-    // 3. Determinar o aGastarAtualizado anterior (para cálculo do aGastar)
-    let aGastarAtualizadoAnterior: Decimal;
-    let difChequeExecutivo: Decimal = new Decimal(0);
-
-    // 3.1 Determinar a base de cálculo (EXECUTIVO OU CHEQUE)
+    // 3. Determinar valores iniciais
+    let aGastar: Decimal;
     let baseCalculo = 'CHEQUE';
 
     if (medicaoAnterior) {
-      aGastarAtualizadoAnterior = new Decimal(
-        medicaoAnterior.aGastarAtualizado!.toString(),
-      );
-
-      // Verificar se houve mudança de orçamento (chequeValor → orcamentoExecutivo)
-      const chequeValor = new Decimal(empreendimento.chequeValor.toString());
-      const orcamentoExecutivo = empreendimento.orcamentoExecutivo
-        ? new Decimal(empreendimento.orcamentoExecutivo.toString())
-        : null;
-
-      // Se temos orçamento executivo agora mas não tínhamos antes
-      if (orcamentoExecutivo && medicaoAnterior.baseCalculo === 'CHEQUE') {
-        const diferencaOrcamento = orcamentoExecutivo.minus(chequeValor);
-        baseCalculo = 'EXECUTIVO';
-
-        // Ajustar a diferença entre orçamento executivo e valor do cheque
-        difChequeExecutivo = diferencaOrcamento;
-      }
+      // Usar o saldo atualizado da medição anterior como ponto de partida
+      aGastar = new Decimal(medicaoAnterior.aGastarAtualizado!.toString());
+      baseCalculo = medicaoAnterior.baseCalculo || baseCalculo;
     } else {
-      // Para a primeira medição, usar o orçamento base (chequeValor ou orcamentoExecutivo)
-      aGastarAtualizadoAnterior = empreendimento.orcamentoExecutivo
+      // Primeira medição - definir valores iniciais
+      const orcamentoBase = empreendimento.orcamentoExecutivo
         ? new Decimal(empreendimento.orcamentoExecutivo.toString())
         : new Decimal(empreendimento.chequeValor.toString());
 
       baseCalculo = empreendimento.orcamentoExecutivo ? 'EXECUTIVO' : 'CHEQUE';
+      aGastar = orcamentoBase;
     }
 
-    // 4. A gastar = aGastarAtualizadoAnterior - gasto
-    const aGastar = aGastarAtualizadoAnterior.minus(gasto);
+    // 4. Subtrair o gasto do mês do saldo
+    aGastar = aGastar.minus(gasto);
 
-    // 5. A gastar atualizado = aGastar + (aGastar * incc) + (difChequeOrcamento [caso seja a primeira medição após a inserção do orçamento executivo])
-    const aGastarAtualizado = aGastar.plus(
-      aGastar
-        .times(new Decimal(inccRegistro.incc).dividedBy(100))
-        .plus(difChequeExecutivo),
-    );
+    // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
+    const orcamentoExecutivo = empreendimento.orcamentoExecutivo
+      ? new Decimal(empreendimento.orcamentoExecutivo.toString())
+      : null;
 
-    // 6. Orçamento corrigido = aGastarAtualizado + totalGasto
+    // Se temos orçamento executivo e a base anterior era CHEQUE, mudar a base
+    if (orcamentoExecutivo && baseCalculo === 'CHEQUE') {
+      baseCalculo = 'EXECUTIVO';
+      // Recalcular o aGastar considerando o novo orçamento base
+      aGastar = orcamentoExecutivo.minus(totalGasto);
+    }
+
+    // 6. Calcular saldo atualizado (com INCC e aditivos)
+    const aGastarAtualizado = aGastar
+      .times(new Decimal(1).plus(new Decimal(inccRegistro.incc).dividedBy(100)))
+      .plus(totalAditivos);
+
+    // 7. Calcular orçamento corrigido
     const orcamentoCorrigido = aGastarAtualizado.plus(totalGasto);
 
-    // 7. Evolução total = (totalGasto / orcamentoCorrigido) * 100
+    // 8. Calcular evoluções
     const evolucaoTotal = totalGasto
       .dividedBy(orcamentoCorrigido)
       .times(100)
       .toNumber();
 
-    // 8. Evolução do mês = evolução total atual - evolução total anterior
     const evolucaoTotalAnterior = medicaoAnterior?.evolucaoTotal || 0;
     const evolucaoMes = evolucaoTotal - evolucaoTotalAnterior;
 
@@ -148,25 +154,47 @@ export class MedicaoMensalService {
         incc: inccRegistro.incc,
         totalGasto: totalGasto.toDecimalPlaces(2),
         aGastar: aGastar.toDecimalPlaces(2),
-        aditivo: new Decimal(0).toDecimalPlaces(2), // Inicialmente zero
+        aditivo: totalAditivos.toDecimalPlaces(2),
         aGastarAtualizado: aGastarAtualizado.toDecimalPlaces(2),
         orcamentoCorrigido: orcamentoCorrigido.toDecimalPlaces(2),
         evolucaoMes: parseFloat(evolucaoMes.toFixed(2)),
         evolucaoTotal: parseFloat(evolucaoTotal.toFixed(2)),
-        baseCalculo:
-          medicaoAnterior?.baseCalculo === 'EXECUTIVO'
-            ? 'EXECUTIVO'
-            : baseCalculo,
+        baseCalculo,
       },
     });
   }
 
-  async updateAmpFisico(id: string, ampFisico: UpdateMedicaoMensalDto) {
-    await this.findOne(id);
+  async updateAmpFisico(id: string, dto: UpdateMedicaoMensalDto) {
+    const medicao = await this.findOne(id);
+
+    // Buscar medição anterior para calcular a medição mensal
+    const medicaoAnterior = await this.prisma.medicaoMensal.findFirst({
+      where: {
+        empreendimentoId: medicao.empreendimento.id,
+        OR: [
+          { ano: { lt: medicao.ano } },
+          {
+            ano: medicao.ano,
+            mes: { lt: medicao.mes },
+          },
+        ],
+      },
+      orderBy: [{ ano: 'desc' }, { mes: 'desc' }],
+    });
+
+    const ampFisicoTotal: number = dto.ampFisico;
+    let ampFisicoMensal: number = dto.ampFisico;
+
+    if (medicaoAnterior && medicaoAnterior.ampFisicoTotal) {
+      ampFisicoMensal = ampFisicoTotal - medicaoAnterior.ampFisicoTotal;
+    }
 
     await this.prisma.medicaoMensal.update({
       where: { id },
-      data: ampFisico,
+      data: {
+        ampFisicoTotal: dto.ampFisico,
+        ampFisicoMes: ampFisicoMensal,
+      },
     });
   }
 

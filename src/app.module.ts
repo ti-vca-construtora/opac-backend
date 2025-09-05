@@ -7,6 +7,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module';
 import { InccModule } from './incc/incc.module';
 import { MedicaoMensalModule } from './medicao-mensal/medicao-mensal.module';
+import { AprovacoesModule } from './aprovacoes/aprovacoes.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MedicaoMensalModule } from './medicao-mensal/medicao-mensal.module';
     EmpreendimentosModule,
     InccModule,
     MedicaoMensalModule,
+    AprovacoesModule,
   ],
 })
 export class AppModule {}

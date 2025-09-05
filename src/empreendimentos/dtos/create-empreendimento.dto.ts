@@ -99,10 +99,11 @@ export class CreateEmpreendimentoDto {
   @IsDateString()
   chequeData: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Valor do orçamento executivo associado ao empreendimento',
     example: 10000000.0,
   })
+  @IsOptional()
   @IsNumber()
-  orcamentoExecutivo: number;
+  orcamentoExecutivo?: number;
 }
