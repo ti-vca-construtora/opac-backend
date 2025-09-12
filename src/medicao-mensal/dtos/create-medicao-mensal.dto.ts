@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-validator';
 
 export class CreateMedicaoMensalDto {
   @ApiProperty({ description: 'Mês de referência (1-12)' })
@@ -39,8 +39,17 @@ export class CreateMedicaoMensalDto {
   @IsPositive()
   custoIncorrido: number;
 
-  @ApiProperty({ description: 'ID do empreendimento no Sienge' })
+  @ApiProperty({ description: 'Custo de locadora' })
   @IsNumber()
   @IsPositive()
-  idSienge: number;
+  locadora: number;
+
+  @ApiProperty({ description: 'Custo de usina' })
+  @IsNumber()
+  @IsPositive()
+  usina: number;
+
+  @ApiProperty({ description: 'ID do empreendimento no Sienge' })
+  @IsString()
+  idSienge: string;
 }

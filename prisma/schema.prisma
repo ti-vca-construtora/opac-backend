@@ -55,7 +55,7 @@ model Permissions {
 
 model Empreendimento {
   id       String @id @default(uuid())
-  idSienge Int    @unique
+  idSienge String @unique
 
   nome String
   cnpj String @unique
@@ -102,7 +102,7 @@ model Incc {
 
 model MedicaoMensal {
   id                 String  @id @default(uuid())
-  idSienge           Int
+  idSienge           String
   totalDistorcoes    Decimal @db.Decimal(15, 2)
   totalCustoPorNivel Decimal @db.Decimal(15, 2)
   totalEstoque       Decimal @db.Decimal(15, 2)
@@ -121,6 +121,8 @@ model MedicaoMensal {
   baseCalculo        String?  @default("CHEQUE") // Base em que foi feito o cálculo (valor do cheque ou orçamento executivo)
   ampFisicoTotal     Float? // Evolução física total
   ampFisicoMes       Float? // Evolução física do mês
+  locadora           Decimal? @db.Decimal(15, 2) // Custo de locadora
+  usina              Decimal? @db.Decimal(15, 2) // Custo de usina
 
   empreendimentoId String
   empreendimento   Empreendimento @relation(fields: [empreendimentoId], references: [id])

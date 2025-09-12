@@ -217,14 +217,7 @@ export class AprovacaoService {
               email: true,
             },
           },
-          empreendimento: {
-            select: {
-              id: true,
-              nome: true,
-              cidade: true,
-              uf: true,
-            },
-          },
+          empreendimento: true,
         },
         orderBy: { createdAt: 'desc' },
       }),

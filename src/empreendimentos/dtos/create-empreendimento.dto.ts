@@ -11,10 +11,10 @@ import {
 export class CreateEmpreendimentoDto {
   @ApiProperty({
     description: 'ID do empreendimento no Sienge',
-    example: 11,
+    example: '11_VCA',
   })
-  @IsNumber()
-  idSienge: number;
+  @IsString()
+  idSienge: string;
 
   @ApiProperty({
     description: 'Nome do empreendimento',
