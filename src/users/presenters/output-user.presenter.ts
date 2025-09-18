@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { UserOutputDto } from '../dtos/output-user.dto';
 import { PermissionDto } from 'src/permissions/dtos/permission.dto';
+import { Role } from '@prisma/client';
 
 export class OutputUserPresenter {
   id: string;
@@ -8,7 +9,7 @@ export class OutputUserPresenter {
   email: string;
   @Transform(({ value }: { value: Date }) => value.toISOString())
   createdAt: Date;
-  roles: string[];
+  roles: Role[];
   permissions: PermissionDto[];
   isActive: boolean;
   updatedAt: Date;

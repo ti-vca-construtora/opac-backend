@@ -46,18 +46,13 @@ export class AuthController {
     const { user } = req;
     const { access_token } = this.authService.login(user);
 
-    console.log(user);
+    const isProd = this.configService.getNodeEnv() === 'production';
 
     res.cookie('opac_access_token', access_token, {
-      httpOnly: false,
-      secure: this.configService.getNodeEnv() === 'production',
-      sameSite:
-        this.configService.getNodeEnv() === 'production' ? 'strict' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 1 DIA
-      domain:
-        this.configService.getNodeEnv() === 'development'
-          ? 'localhost'
-          : undefined,
+      httpOnly: isProd, // true em prod, false em dev
+      secure: isProd, // true em prod (HTTPS), false em dev (HTTP)
+      sameSite: isProd ? 'none' : 'lax', // cross-site em prod, lax em dev
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     return { access_token };

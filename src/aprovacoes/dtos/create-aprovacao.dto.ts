@@ -46,7 +46,6 @@ export class CreateAprovacaoDto {
     minimum: 0,
   })
   @IsNumber()
-  @IsPositive()
   @IsNotEmpty()
   valor: number;
 

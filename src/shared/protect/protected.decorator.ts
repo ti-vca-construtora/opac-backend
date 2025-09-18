@@ -9,14 +9,13 @@ import { ApiOperation, ApiSecurity } from '@nestjs/swagger';
 
 export function Protected(
   permission: { [area: string]: string[] } | '',
-  description: string,
   ...roles: Role[]
 ) {
   return applyDecorators(
     UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard),
     ApiSecurity('roles', roles),
     ApiOperation({
-      summary: description || 'Acesso protegido',
+      summary: 'Acesso protegido',
       description: `Requer role: ${roles.join(', ')} ${
         permission ? `e permissões: ${JSON.stringify(permission)}` : ''
       }`,

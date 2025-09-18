@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { EmpreendimentosService } from './empreendimentos.service';
 import {
@@ -13,11 +15,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateEmpreendimentoDto } from './dtos/create-empreendimento.dto';
 import { UpdateEmpreendimentoDto } from './dtos/update-empreendimento.dto';
 import { Protected } from 'src/shared/protect/protected.decorator';
 import { Role } from 'src/roles/roles.enum';
+import { SwaggerDocs } from 'src/shared/swagger/swagger.decorator';
 
 @ApiTags('Empreendimentos')
 @ApiBearerAuth('JWT')
@@ -25,9 +29,9 @@ import { Role } from 'src/roles/roles.enum';
 export class EmpreendimentosController {
   constructor(
     private readonly empreendimentosService: EmpreendimentosService,
-  ) {}
+  ) { }
 
-  @Protected({ api: ['create_empreendimento'] }, Role.READER)
+  @Protected('', Role.CONTROLLER)
   @Post()
   @ApiOperation({ summary: 'Criar um novo empreendimento' })
   @ApiResponse({
@@ -38,18 +42,27 @@ export class EmpreendimentosController {
     return this.empreendimentosService.create(dto);
   }
 
-  @Protected('', Role.READER)
+  @Protected('', Role.READER, Role.CONTROLLER, Role.APPROVER)
   @Get()
   @ApiOperation({ summary: 'Listar todos os empreendimentos' })
+  @SwaggerDocs({
+    summary: 'Listar todos os empreendimentos',
+    description: 'Retorna uma lista paginada de empreendimentos.',
+    requiresPagination: true,
+  })
+
   @ApiResponse({
     status: 200,
     description: 'Lista de empreendimentos retornada com sucesso',
   })
-  getAll() {
-    return this.empreendimentosService.getAll();
+  getAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page: number,
+    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize: number,
+  ) {
+    return this.empreendimentosService.getAll(page, pageSize);
   }
 
-  @Protected('', Role.READER)
+  @Protected('', Role.READER, Role.CONTROLLER, Role.APPROVER)
   @Get(':id')
   @ApiOperation({ summary: 'Buscar um empreendimento pelo ID' })
   @ApiResponse({ status: 200, description: 'Empreendimento encontrado' })
@@ -58,7 +71,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.findById(id);
   }
 
-  @Protected({ api: ['update_empreendimento'] }, Role.MASTER)
+  @Protected('', Role.CONTROLLER)
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um empreendimento' })
   @ApiResponse({
@@ -70,7 +83,7 @@ export class EmpreendimentosController {
     return this.empreendimentosService.update(id, dto);
   }
 
-  @Protected({ api: ['delete_empreendimento'] }, Role.MASTER)
+  @Protected('', Role.MASTER)
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um empreendimento' })
   @ApiResponse({

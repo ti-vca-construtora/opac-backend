@@ -4,6 +4,7 @@ import { OutputUserPresenter } from 'src/users/presenters/output-user.presenter'
 import { JwtService } from '@nestjs/jwt';
 import { UserOutputDto } from '../users/dtos/output-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -27,8 +28,8 @@ export class AuthService {
     return new OutputUserPresenter(user.data);
   }
 
-  login(user: { email: string; id: string }) {
-    const payload = { email: user.email, sub: user.id };
+  login(user: { email: string; id: string; roles: Role[] }) {
+    const payload = { email: user.email, sub: user.id, roles: user.roles };
 
     return {
       access_token: this.jwtService.sign(payload),

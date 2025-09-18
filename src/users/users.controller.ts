@@ -32,9 +32,9 @@ import { SwaggerDocs } from 'src/shared/swagger/swagger.decorator';
 @ApiBearerAuth('JWT')
 @Controller('users')
 export class UsersController {
-  constructor(private userService: UsersService) {}
+  constructor(private userService: UsersService) { }
 
-  @Protected('', Role.READER)
+  @Protected('', Role.READER, Role.CONTROLLER, Role.APPROVER)
   @Get()
   @SwaggerDocs({
     summary: 'Buscar usuário por ID',
@@ -64,7 +64,7 @@ export class UsersController {
     return this.userService.getAll({ page, pageSize, role });
   }
 
-  @Protected('', Role.READER)
+  @Protected('', Role.READER, Role.CONTROLLER, Role.APPROVER)
   @Get('/:id')
   @ApiOperation({
     summary: 'Buscar usuário por ID',
@@ -101,7 +101,7 @@ export class UsersController {
     return this.userService.findById(id);
   }
 
-  @Protected('', Role.READER)
+  @Protected('', Role.READER, Role.CONTROLLER, Role.APPROVER)
   @Get('/email')
   @ApiOperation({
     summary: 'Buscar usuário por e-mail',

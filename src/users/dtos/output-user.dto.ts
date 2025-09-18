@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { PermissionDto } from 'src/permissions/dtos/permission.dto';
 
 export class UserOutputDto {
@@ -18,7 +19,7 @@ export class UserOutputDto {
   name?: string | null;
 
   @ApiProperty({ description: 'Cargos do usuário ' })
-  roles: string[];
+  roles: Role[];
 
   @ApiProperty({ description: 'Permissões do usuário ' })
   permissions: PermissionDto[];
