@@ -27,7 +27,7 @@ interface PlanilhaRow {
 
 @Injectable()
 export class MedicaoMensalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateMedicaoMensalDto) {
     const empreendimento = await this.prisma.empreendimento.findUnique({
@@ -424,14 +424,7 @@ export class MedicaoMensalService {
         skip,
         take: pageSize,
         include: {
-          empreendimento: {
-            select: {
-              id: true,
-              nome: true,
-              cidade: true,
-              uf: true,
-            },
-          },
+          empreendimento: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -450,14 +443,7 @@ export class MedicaoMensalService {
     const medicao = await this.prisma.medicaoMensal.findUnique({
       where: { id },
       include: {
-        empreendimento: {
-          select: {
-            id: true,
-            nome: true,
-            cidade: true,
-            uf: true,
-          },
-        },
+        empreendimento: true,
       },
     });
 
