@@ -134,6 +134,11 @@ export class MedicaoMensalService {
     // 4. Subtrair o gasto do mês do saldo
     aGastar = aGastar.minus(gasto);
 
+    // 4.1. IMPEDIR QUE aGastar FIQUE NEGATIVO
+    if (aGastar.lessThan(0)) {
+      aGastar = new Decimal(0);
+    }
+      
     // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
     const orcamentoExecutivo = empreendimento.orcamentoExecutivo
       ? new Decimal(empreendimento.orcamentoExecutivo.toString())
