@@ -156,8 +156,24 @@ export class MedicaoMensalService {
       .times(new Decimal(1).plus(new Decimal(inccRegistro.incc).dividedBy(100)))
       .plus(totalAditivos);
 
-    // 7. Calcular orçamento corrigido
-    const orcamentoCorrigido = aGastarAtualizado.plus(totalGasto);
+    // 7. Calcular orçamento corrigido 2.0
+    let orcamentoCorrigido: Decimal;
+
+    if (aGastar.isZero()) { // Se o saldo a gastar foi zerado neste cálculo...
+      if (medicaoAnterior) {
+        // Se tiver medição anterior, pega o orçamento corrigido dela.
+        orcamentoCorrigido = new Decimal(medicaoAnterior.orcamentoCorrigido.toString());
+      } else {
+        // Senão, pega o próprio executivo informado (ou o cheque)
+        const orcamentoInicial = empreendimento.orcamentoExecutivo
+          ? new Decimal(empreendimento.orcamentoExecutivo.toString())
+          : new Decimal(empreendimento.chequeValor.toString());
+        orcamentoCorrigido = orcamentoInicial;
+      }
+    } else {
+      // Se ainda há saldo a gastar (o caso normal), o cálculo continua como antes.
+      orcamentoCorrigido = aGastarAtualizado.plus(totalGasto);
+    }
 
     // 8. Calcular evoluções
     const evolucaoTotal = totalGasto
