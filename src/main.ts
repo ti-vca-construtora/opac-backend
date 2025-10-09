@@ -26,7 +26,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: ['https://opac-frontend.vercel.app', 'http://localhost:3001'],
+    origin: ['https://opac-frontend.vercel.app', 'http://localhost:3001', 'https://controleopac.vcaconstrutora.com.br'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
