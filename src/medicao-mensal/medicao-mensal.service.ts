@@ -138,7 +138,7 @@ export class MedicaoMensalService {
     if (aGastar.lessThan(0)) {
       aGastar = new Decimal(0);
     }
-      
+
     // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
     const orcamentoExecutivo = empreendimento.orcamentoExecutivo
       ? new Decimal(empreendimento.orcamentoExecutivo.toString())
@@ -160,7 +160,7 @@ export class MedicaoMensalService {
     let orcamentoCorrigido: Decimal;
 
     if (aGastar.isZero()) { // Se o saldo a gastar foi zerado neste cálculo...
-      if (medicaoAnterior) {
+      if (medicaoAnterior && medicaoAnterior.orcamentoCorrigido) {
         // Se tiver medição anterior, pega o orçamento corrigido dela.
         orcamentoCorrigido = new Decimal(medicaoAnterior.orcamentoCorrigido.toString());
       } else {
