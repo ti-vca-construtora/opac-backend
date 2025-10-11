@@ -113,6 +113,10 @@ export class MedicaoMensalService {
     // 2. Total gasto = custoIncorrido (acumulado)
     const totalGasto = custoIncorrido;
 
+    // 2.1. Calcular realizado = totalGasto - totalEstoque
+    const totalEstoque = new Decimal(dto.totalEstoque);
+    const realizado = totalGasto.minus(totalEstoque);
+
     // 3. Determinar valores iniciais
     let aGastar: Decimal;
     let baseCalculo = 'CHEQUE';
@@ -175,8 +179,8 @@ export class MedicaoMensalService {
       orcamentoCorrigido = aGastarAtualizado.plus(totalGasto);
     }
 
-    // 8. Calcular evoluções
-    const evolucaoTotal = totalGasto
+    // 8. Calcular evoluções (usando 'realizado' ao invés de 'totalGasto')
+    const evolucaoTotal = realizado
       .dividedBy(orcamentoCorrigido)
       .times(100)
       .toNumber();
@@ -191,6 +195,7 @@ export class MedicaoMensalService {
         gasto: gasto.toDecimalPlaces(2),
         incc: inccRegistro.incc,
         totalGasto: totalGasto.toDecimalPlaces(2),
+        realizado: realizado.toDecimalPlaces(2),
         aGastar: aGastar.toDecimalPlaces(2),
         aditivo: totalAditivos.toDecimalPlaces(2),
         aGastarAtualizado: aGastarAtualizado.toDecimalPlaces(2),
@@ -263,6 +268,7 @@ export class MedicaoMensalService {
         Gasto: medicao.gasto?.toNumber() || 0,
         INCC: medicao.incc,
         'Total Gasto': medicao.totalGasto?.toNumber() || 0,
+        Realizado: medicao.realizado?.toNumber() || 0,
         'A Gastar': medicao.aGastar?.toNumber() || 0,
         Aditivo: medicao.aditivo?.toNumber() || 0,
         'A Gastar Atualizado': medicao.aGastarAtualizado?.toNumber() || 0,
@@ -295,6 +301,7 @@ export class MedicaoMensalService {
         { wch: 12 }, // Gasto
         { wch: 8 }, // INCC
         { wch: 15 }, // Total Gasto
+        { wch: 15 }, // Realizado
         { wch: 12 }, // A Gastar
         { wch: 10 }, // Aditivo
         { wch: 18 }, // A Gastar Atualizado

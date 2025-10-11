@@ -112,6 +112,7 @@ model MedicaoMensal {
   gasto              Decimal? @db.Decimal(15, 2) // Custo incorrido do mês (atual - anterior)
   incc               Float? // Percentual do INCC do mês
   totalGasto         Decimal? @db.Decimal(15, 2) // Custo incorrido acumulado
+  realizado          Decimal? @db.Decimal(15, 2) // Total Gasto - Total Estoque (valor efetivamente realizado)
   aGastar            Decimal? @db.Decimal(15, 2) // Valor restante a gastar (antes do INCC)
   aditivo            Decimal? @db.Decimal(15, 2) // Valor de aditivos
   aGastarAtualizado  Decimal? @db.Decimal(15, 2) // Valor a gastar corrigido pelo INCC
