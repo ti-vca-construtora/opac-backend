@@ -109,85 +109,110 @@ export class MedicaoMensalService {
 
     // 1. Gasto do mês = custoIncorrido atual - custoIncorrido anterior
     const gasto = custoIncorrido.minus(custoAnterior);
-
+    
     // 2. Total gasto = custoIncorrido (acumulado)
     const totalGasto = custoIncorrido;
-
+    
     // 2.1. Calcular realizado = totalGasto - totalEstoque
     const totalEstoque = new Decimal(dto.totalEstoque);
     const realizado = totalGasto.minus(totalEstoque);
-
+    
+    // 2.2. Buscar aditivos ANTES de verificar travamento
+    const aditivos = await this.prisma.aditivo.findMany({
+      where: {
+        empreendimentoId: empreendimento.id,
+        mes: dto.mes,
+        ano: dto.ano,
+      },
+    });
+    
+    const totalAditivos = aditivos.reduce(
+      (sum, aditivo) => sum.plus(new Decimal(aditivo.aditivo.toString())),
+      new Decimal(0),
+    );
+    
     // 3. Determinar valores iniciais
     let aGastar: Decimal;
     let baseCalculo = 'CHEQUE';
-
+    
     if (medicaoAnterior) {
-      // Usar o saldo atualizado da medição anterior como ponto de partida
       aGastar = new Decimal(medicaoAnterior.aGastarAtualizado!.toString());
       baseCalculo = medicaoAnterior.baseCalculo || baseCalculo;
     } else {
-      // Primeira medição - definir valores iniciais
       const orcamentoBase = empreendimento.orcamentoExecutivo
         ? new Decimal(empreendimento.orcamentoExecutivo.toString())
         : new Decimal(empreendimento.chequeValor.toString());
-
       baseCalculo = empreendimento.orcamentoExecutivo ? 'EXECUTIVO' : 'CHEQUE';
       aGastar = orcamentoBase;
     }
-
+    
     // 4. Subtrair o gasto do mês do saldo
     aGastar = aGastar.minus(gasto);
-
+    
     // 4.1. IMPEDIR QUE aGastar FIQUE NEGATIVO
     if (aGastar.lessThan(0)) {
       aGastar = new Decimal(0);
     }
-
+    
     // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
     const orcamentoExecutivo = empreendimento.orcamentoExecutivo
       ? new Decimal(empreendimento.orcamentoExecutivo.toString())
       : null;
-
-    // Se temos orçamento executivo e a base anterior era CHEQUE, mudar a base
+    
     if (orcamentoExecutivo && baseCalculo === 'CHEQUE') {
       baseCalculo = 'EXECUTIVO';
-      // Recalcular o aGastar considerando o novo orçamento base
       aGastar = orcamentoExecutivo.minus(totalGasto);
     }
-
+    
     // 6. Calcular saldo atualizado (com INCC e aditivos)
-    const aGastarAtualizado = aGastar
+    let aGastarAtualizado = aGastar
       .times(new Decimal(1).plus(new Decimal(inccRegistro.incc).dividedBy(100)))
       .plus(totalAditivos);
-
-    // 7. Calcular orçamento corrigido 2.0
+    
+    // ⚠️ REGRA DE RETIFICAÇÃO — verificar se deve travar orçamento
+    // IMPORTANTE: Verifica DEPOIS de aplicar aditivos e INCC
+    const deveTravarOrcamento =
+      medicaoAnterior &&
+      custoIncorrido.lessThan(custoAnterior) && // houve redução (retificação)
+      new Decimal(medicaoAnterior.aGastar.toString()).isZero() && // saldo anterior estava zerado
+      medicaoAnterior.orcamentoCorrigido &&
+      custoIncorrido.greaterThanOrEqualTo( // ainda acima do orçamento anterior
+        new Decimal(medicaoAnterior.orcamentoCorrigido.toString()),
+      ) &&
+      aGastarAtualizado.lessThanOrEqualTo(0); // E mesmo com aditivos/INCC ainda não há saldo
+    
+    // 7. Calcular orçamento corrigido
     let orcamentoCorrigido: Decimal;
-
-    if (aGastar.isZero()) { // Se o saldo a gastar foi zerado neste cálculo...
+    
+    if (deveTravarOrcamento) {
+      // Travado: mantém orçamento anterior
+      orcamentoCorrigido = new Decimal(medicaoAnterior.orcamentoCorrigido.toString());
+      // Força aGastar e aGastarAtualizado = 0
+      aGastar = new Decimal(0);
+      aGastarAtualizado = new Decimal(0);
+    } else if (aGastar.isZero()) {
+      // Lógica original para quando zera naturalmente
       if (medicaoAnterior && medicaoAnterior.orcamentoCorrigido) {
-        // Se tiver medição anterior, pega o orçamento corrigido dela.
         orcamentoCorrigido = new Decimal(medicaoAnterior.orcamentoCorrigido.toString());
       } else {
-        // Senão, pega o próprio executivo informado (ou o cheque)
         const orcamentoInicial = empreendimento.orcamentoExecutivo
           ? new Decimal(empreendimento.orcamentoExecutivo.toString())
           : new Decimal(empreendimento.chequeValor.toString());
         orcamentoCorrigido = orcamentoInicial;
       }
     } else {
-      // Se ainda há saldo a gastar (o caso normal), o cálculo continua como antes.
+      // Caso normal
       orcamentoCorrigido = aGastarAtualizado.plus(totalGasto);
     }
-
-    // 8. Calcular evoluções (usando 'realizado' ao invés de 'totalGasto')
+    
+    // 8. Calcular evoluções
     const evolucaoTotal = realizado
       .dividedBy(orcamentoCorrigido)
       .times(100)
       .toNumber();
-
     const evolucaoTotalAnterior = medicaoAnterior?.evolucaoTotal || 0;
     const evolucaoMes = evolucaoTotal - evolucaoTotalAnterior;
-
+    
     return this.prisma.medicaoMensal.create({
       data: {
         ...dto,
@@ -205,7 +230,6 @@ export class MedicaoMensalService {
         baseCalculo,
       },
     });
-  }
 
   async createBulk(dtos: CreateMedicaoMensalDto[]) {
     const results: MedicaoMensal[] = [];
