@@ -131,53 +131,58 @@ export class MedicaoMensalService {
       baseCalculo = empreendimento.orcamentoExecutivo ? 'EXECUTIVO' : 'CHEQUE';
       aGastar = orcamentoBase;
     }
-    
-    // 4. Subtrair o gasto do mês do saldo
-    aGastar = aGastar.minus(gasto);
-    
-    // 4.1. IMPEDIR QUE aGastar FIQUE NEGATIVO
-    if (aGastar.lessThan(0)) {
-      aGastar = new Decimal(0);
-    }
-    
-    // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
-    const orcamentoExecutivo = empreendimento.orcamentoExecutivo
-      ? new Decimal(empreendimento.orcamentoExecutivo.toString())
-      : null;
-    
-    if (orcamentoExecutivo && baseCalculo === 'CHEQUE') {
-      baseCalculo = 'EXECUTIVO';
-      aGastar = orcamentoExecutivo.minus(totalGasto);
-    }
-    
-    // 6. Calcular saldo atualizado (com INCC e aditivos)
-    let aGastarAtualizado = aGastar
-      .times(new Decimal(1).plus(new Decimal(inccRegistro.incc).dividedBy(100)))
-      .plus(totalAditivos);
-    
-    // ⚠️ REGRA DE RETIFICAÇÃO — verificar se deve travar orçamento
-    // IMPORTANTE: Verifica DEPOIS de aplicar aditivos e INCC
+
+    // ⚠️ VERIFICAR RETIFICAÇÃO ANTES DE CALCULAR NOVO SALDO
     const deveTravarOrcamento =
       medicaoAnterior &&
-      medicaoAnterior.aGastar !== null && 
+      medicaoAnterior.aGastar !== null &&
       custoIncorrido.lessThan(custoAnterior) && // houve redução (retificação)
       new Decimal(medicaoAnterior.aGastar.toString()).isZero() && // saldo anterior estava zerado
-      medicaoAnterior.orcamentoCorrigido !== null && // 
-      totalGasto.greaterThanOrEqualTo( 
+      medicaoAnterior.orcamentoCorrigido !== null &&
+      totalGasto.greaterThanOrEqualTo( // ainda acima do orçamento anterior
         new Decimal(medicaoAnterior.orcamentoCorrigido.toString()),
-      ) &&
-      aGastarAtualizado.lessThanOrEqualTo(0); // E mesmo com aditivos/INCC ainda não há saldo
+      );
 
+    // 4. Subtrair o gasto do mês do saldo (SÓ SE NÃO ESTIVER TRAVADO)
+    if (!deveTravarOrcamento) {
+      aGastar = aGastar.minus(gasto);
+      
+      // 4.1. IMPEDIR QUE aGastar FIQUE NEGATIVO
+      if (aGastar.lessThan(0)) {
+        aGastar = new Decimal(0);
+      }
+      
+      // 5. Verificar se houve mudança de base de cálculo (CHEQUE → EXECUTIVO)
+      const orcamentoExecutivo = empreendimento.orcamentoExecutivo
+        ? new Decimal(empreendimento.orcamentoExecutivo.toString())
+        : null;
+      
+      if (orcamentoExecutivo && baseCalculo === 'CHEQUE') {
+        baseCalculo = 'EXECUTIVO';
+        aGastar = orcamentoExecutivo.minus(totalGasto);
+      }
+    } else {
+      // Modo travado: mantém saldo zerado
+      aGastar = new Decimal(0);
+    }
+
+    // 6. Calcular saldo atualizado (com INCC e aditivos)
+    let aGastarAtualizado: Decimal;
+
+    if (deveTravarOrcamento) {
+      aGastarAtualizado = new Decimal(0);
+    } else {
+      aGastarAtualizado = aGastar
+        .times(new Decimal(1).plus(new Decimal(inccRegistro.incc).dividedBy(100)))
+        .plus(totalAditivos);
+    }
+        
     // 7. Calcular orçamento corrigido
     let orcamentoCorrigido: Decimal;
 
     if (deveTravarOrcamento) {
       // Travado: mantém orçamento anterior
-      // Agora é seguro porque já verificamos que não é null acima
       orcamentoCorrigido = new Decimal(medicaoAnterior!.orcamentoCorrigido!.toString());
-      // Força aGastar e aGastarAtualizado = 0
-      aGastar = new Decimal(0);
-      aGastarAtualizado = new Decimal(0);
     } else if (aGastar.isZero()) {
       // Lógica original para quando zera naturalmente
       if (medicaoAnterior && medicaoAnterior.orcamentoCorrigido) {
