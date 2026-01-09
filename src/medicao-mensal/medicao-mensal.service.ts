@@ -117,20 +117,6 @@ export class MedicaoMensalService {
     const totalEstoque = new Decimal(dto.totalEstoque);
     const realizado = totalGasto.minus(totalEstoque);
     
-    // 2.2. Buscar aditivos ANTES de verificar travamento
-    const aditivos = await this.prisma.aditivo.findMany({
-      where: {
-        empreendimentoId: empreendimento.id,
-        mes: dto.mes,
-        ano: dto.ano,
-      },
-    });
-    
-    const totalAditivos = aditivos.reduce(
-      (sum, aditivo) => sum.plus(new Decimal(aditivo.aditivo.toString())),
-      new Decimal(0),
-    );
-    
     // 3. Determinar valores iniciais
     let aGastar: Decimal;
     let baseCalculo = 'CHEQUE';
@@ -173,20 +159,22 @@ export class MedicaoMensalService {
     // IMPORTANTE: Verifica DEPOIS de aplicar aditivos e INCC
     const deveTravarOrcamento =
       medicaoAnterior &&
+      medicaoAnterior.aGastar !== null && // <--- ADICIONE ESTA LINHA
       custoIncorrido.lessThan(custoAnterior) && // houve redução (retificação)
       new Decimal(medicaoAnterior.aGastar.toString()).isZero() && // saldo anterior estava zerado
-      medicaoAnterior.orcamentoCorrigido &&
+      medicaoAnterior.orcamentoCorrigido !== null && // <--- MOVA ESTA VERIFICAÇÃO PARA CIMA
       custoIncorrido.greaterThanOrEqualTo( // ainda acima do orçamento anterior
         new Decimal(medicaoAnterior.orcamentoCorrigido.toString()),
       ) &&
       aGastarAtualizado.lessThanOrEqualTo(0); // E mesmo com aditivos/INCC ainda não há saldo
-    
+
     // 7. Calcular orçamento corrigido
     let orcamentoCorrigido: Decimal;
-    
+
     if (deveTravarOrcamento) {
       // Travado: mantém orçamento anterior
-      orcamentoCorrigido = new Decimal(medicaoAnterior.orcamentoCorrigido.toString());
+      // Agora é seguro porque já verificamos que não é null acima
+      orcamentoCorrigido = new Decimal(medicaoAnterior!.orcamentoCorrigido!.toString());
       // Força aGastar e aGastarAtualizado = 0
       aGastar = new Decimal(0);
       aGastarAtualizado = new Decimal(0);
@@ -230,6 +218,7 @@ export class MedicaoMensalService {
         baseCalculo,
       },
     });
+  }
 
   async createBulk(dtos: CreateMedicaoMensalDto[]) {
     const results: MedicaoMensal[] = [];
