@@ -159,11 +159,11 @@ export class MedicaoMensalService {
     // IMPORTANTE: Verifica DEPOIS de aplicar aditivos e INCC
     const deveTravarOrcamento =
       medicaoAnterior &&
-      medicaoAnterior.aGastar !== null && // <--- ADICIONE ESTA LINHA
+      medicaoAnterior.aGastar !== null && 
       custoIncorrido.lessThan(custoAnterior) && // houve redução (retificação)
       new Decimal(medicaoAnterior.aGastar.toString()).isZero() && // saldo anterior estava zerado
-      medicaoAnterior.orcamentoCorrigido !== null && // <--- MOVA ESTA VERIFICAÇÃO PARA CIMA
-      custoIncorrido.greaterThanOrEqualTo( // ainda acima do orçamento anterior
+      medicaoAnterior.orcamentoCorrigido !== null && // 
+      totalGasto.greaterThanOrEqualTo( 
         new Decimal(medicaoAnterior.orcamentoCorrigido.toString()),
       ) &&
       aGastarAtualizado.lessThanOrEqualTo(0); // E mesmo com aditivos/INCC ainda não há saldo
