@@ -8,6 +8,7 @@ import { EmpreendimentosModule } from './empreendimentos/empreendimentos.module'
 import { InccModule } from './incc/incc.module';
 import { MedicaoMensalModule } from './medicao-mensal/medicao-mensal.module';
 import { AprovacoesModule } from './aprovacoes/aprovacoes.module';
+import { ContabilidadeModule } from './contabilidade/contabilidade.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AprovacoesModule } from './aprovacoes/aprovacoes.module';
     InccModule,
     MedicaoMensalModule,
     AprovacoesModule,
+    ContabilidadeModule,
   ],
 })
 export class AppModule {}

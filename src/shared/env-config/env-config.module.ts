@@ -10,7 +10,7 @@ import { join } from 'node:path';
 export class EnvConfigModule {
   static forRoot(options: ConfigModuleOptions = {}): DynamicModule {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    const envFilePath = [join(process.cwd(), `.env.${nodeEnv}`)];
+    const envFilePath = [join(process.cwd(), `.env.${nodeEnv}.local`), join(process.cwd(), `.env.${nodeEnv}`), join(process.cwd(), '.env')];
 
     return {
       module: EnvConfigModule,

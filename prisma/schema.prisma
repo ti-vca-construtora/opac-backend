@@ -81,8 +81,52 @@ model Empreendimento {
   medicaoMensal MedicaoMensal[]
   aditivo       Aditivo[]
   Aprovacao     Aprovacao[]
+  contabilidadeMensal ContabilidadeMensal[]
+  aditivosContabeis AditivoContabil[]
 
   @@map("empreendimentos")
+}
+
+model ContabilidadeMensal {
+  id String @id @default(uuid())
+  empreendimentoId String
+  empreendimento Empreendimento @relation(fields: [empreendimentoId], references: [id])
+  mes Int
+  ano Int
+  poc Decimal? @db.Decimal(12, 5)
+  custoIncorridoMensal Decimal? @db.Decimal(18, 2)
+  custoIncorridoAcumulado Decimal? @db.Decimal(18, 2)
+  estoque Decimal? @db.Decimal(18, 2)
+  custoApropriadoMensal Decimal? @db.Decimal(18, 2)
+  terreno Decimal? @db.Decimal(18, 2)
+  empresaSienge String?
+  receitaImportadaEm DateTime?
+  estoqueImportadoEm DateTime?
+  balanceteImportadoEm DateTime?
+  @@unique([empreendimentoId, mes, ano])
+  @@map("contabilidade_mensal")
+}
+
+model AditivoContabil {
+  id String @id @default(uuid())
+  empreendimentoId String
+  empreendimento Empreendimento @relation(fields: [empreendimentoId], references: [id])
+  mes Int
+  ano Int
+  valor Decimal @db.Decimal(18, 2)
+  observacao String?
+  createdAt DateTime @default(now())
+  @@map("aditivos_contabeis")
+}
+
+model MapeamentoContabil {
+  id String @id @default(uuid())
+  empresaSienge String @unique
+  contaConstrucao String
+  contaTransferencia String
+  contaTerreno String
+  updatedAt DateTime @updatedAt
+  @@map("mapeamentos_contabeis")
 }
 
 model Incc {
