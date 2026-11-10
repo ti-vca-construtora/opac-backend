@@ -1,0 +1,1 @@
+ALTER TABLE "aditivos_contabeis" ADD COLUMN "origem" TEXT NOT NULL DEFAULT 'MANUAL';

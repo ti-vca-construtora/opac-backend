@@ -13,6 +13,10 @@ const money = (value: unknown) => {
 const idFrom = (value: string) => /^\s*(\d+)\s*-/.exec(value)?.[1];
 const period = (value: string) => { const m = /^(\d{2})\/(\d{4})$/.exec(value.trim()); return m ? { mes: Number(m[1]), ano: Number(m[2]) } : null; };
 const monthKey = (ano: number, mes: number) => ano * 12 + mes;
+const decodeLegacyName = (value: string) => value.replace(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+const nameTokens = (value: string) => decodeLegacyName(value)
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+  .match(/[A-Z]{3,}/g)?.filter(token => !['RESIDENCIAL', 'INCORPORACAO', 'EMPREENDIMENTOS', 'INCORPORADORA'].includes(token)) || [];
 
 @Injectable()
 export class ContabilidadeService {
@@ -29,38 +33,56 @@ export class ContabilidadeService {
     return XLSX.utils.sheet_to_json<Row>(book.Sheets[book.SheetNames[0]], { header: 1, defval: '', raw: false }).map(r => r.map(x => String(x ?? '').trim()));
   }
 
-  async importar(fonte: string, buffer: Buffer | undefined, mes: number, ano: number) {
-    this.validatePeriod(mes, ano);
+  async importar(fonte: string, buffer: Buffer | undefined, mes?: number, ano?: number) {
+    if (mes !== undefined || ano !== undefined) this.validatePeriod(mes!, ano!);
     if (!['receita', 'estoque'].includes(fonte)) throw new BadRequestException('Fonte inválida');
     const rows = this.rows(buffer);
-    const projects = await this.prisma.empreendimento.findMany({ select: { id: true, idSienge: true } });
-    const byCode = new Map(projects.map(p => [p.idSienge, p.id]));
+    const projects = await this.prisma.empreendimento.findMany({ select: { id: true, idSienge: true, nome: true } });
+    const resolve = (raw: string) => {
+      const code = idFrom(raw);
+      if (!code) return null;
+      const tokens = nameTokens(raw);
+      const similar = (name: string) => nameTokens(name).some(token => tokens.includes(token));
+      const candidates = projects.filter(p => p.idSienge.split('_')[0] === code || Number(p.idSienge.split('_')[0]) === Number(code) + 1);
+      const matched = candidates.filter(p => similar(p.nome));
+      if (matched.length === 1) return matched[0];
+      const byName = projects.filter(p => nameTokens(p.nome).filter(token => tokens.includes(token)).length >= 2);
+      return byName.length === 1 ? byName[0] : null;
+    };
     const updates = new Map<string, Record<string, unknown>>();
+    const unmatched = new Set<string>();
+    let filePeriod: { mes: number; ano: number } | null = null;
+    const checkPeriod = (value: string) => {
+      const found = period(value);
+      if (!found) throw new BadRequestException(`Período inválido: ${value}`);
+      if (filePeriod && (found.mes !== filePeriod.mes || found.ano !== filePeriod.ano)) throw new BadRequestException('Arquivo contém períodos diferentes');
+      if (mes !== undefined && (found.mes !== mes || found.ano !== ano)) throw new BadRequestException('Período do arquivo não corresponde ao selecionado');
+      filePeriod = found;
+    };
     if (fonte === 'receita') {
       const h = rows[0];
       if (h?.[1] !== 'Empreendimento' || h?.[2] !== 'Mês/Ano' || h?.[3] !== 'POC') throw new BadRequestException('Cabeçalho da Receita Societária inválido');
       for (const row of rows.slice(1)) {
         if (!row[1]) continue;
-        const p = period(row[2]);
-        if (!p || p.mes !== mes || p.ano !== ano) throw new BadRequestException('Período da Receita não corresponde ao selecionado');
-        const code = idFrom(row[1]);
-        if (!code || !byCode.has(code)) throw new BadRequestException(`Empreendimento não cadastrado: ${row[1]}`);
+        checkPeriod(row[2]);
+        const project = resolve(row[1]);
+        if (!project) { unmatched.add(decodeLegacyName(row[1])); continue; }
         const poc = money(row[3]);
-        const previous = updates.get(code);
-        if (previous && previous.poc !== poc) throw new BadRequestException(`POC divergente no empreendimento ${code}`);
-        updates.set(code, { poc, empresaSienge: idFrom(row[0]), receitaImportadaEm: new Date() });
+        const previous = updates.get(project.id);
+        if (previous && previous.poc !== poc) throw new BadRequestException(`POC divergente no empreendimento ${project.idSienge}`);
+        updates.set(project.id, { poc, receitaImportadaEm: new Date() });
       }
     } else {
-      let code = ''; let active: { mensal: number; acumulado: number; estoque: number } | null = null;
-      const finish = () => { if (active && code) updates.set(code, { custoIncorridoMensal: active.mensal, custoIncorridoAcumulado: active.acumulado, estoque: active.estoque, estoqueImportadoEm: new Date() }); };
+      let projectId = ''; let active: { mensal: number; acumulado: number; estoque: number } | null = null;
+      const finish = () => { if (active && projectId) updates.set(projectId, { custoIncorridoMensal: active.mensal, custoIncorridoAcumulado: active.acumulado, estoque: active.estoque, estoqueImportadoEm: new Date() }); };
       for (const row of rows) {
         if (row[0] === 'Empreendimento') {
-          finish(); code = idFrom(row[1]) || '';
-          if (!byCode.has(code)) throw new BadRequestException(`Empreendimento não cadastrado: ${row[1]}`);
+          finish(); const project = resolve(row[1]); projectId = project?.id || '';
+          if (!project) unmatched.add(decodeLegacyName(row[1]));
           active = null;
         } else if (row[0] === 'Mês/Ano') {
-          const p = period(row[1]);
-          if (!p || p.mes !== mes || p.ano !== ano || row[2] !== 'Custo incorrido acumulado') throw new BadRequestException('Período ou cabeçalho do Estoque inválido');
+          checkPeriod(row[1]);
+          if (row[2] !== 'Custo incorrido acumulado') throw new BadRequestException('Cabeçalho do Estoque inválido');
           active = { mensal: 0, acumulado: money(row[3]), estoque: 0 };
         } else if (active && row[0] && !['Unidade', 'Tipo de imóvel'].includes(row[0]) && row.length >= 9) {
           active.mensal += money(row[5]); active.estoque += money(row[8]);
@@ -68,22 +90,84 @@ export class ContabilidadeService {
       }
       finish();
     }
-    if (!updates.size) throw new BadRequestException('Nenhum empreendimento encontrado');
-    await this.prisma.$transaction([...updates].map(([code, data]) => this.prisma.contabilidadeMensal.upsert({
-      where: { empreendimentoId_mes_ano: { empreendimentoId: byCode.get(code)!, mes, ano } },
-      create: { empreendimentoId: byCode.get(code)!, mes, ano, ...data },
+    if (!filePeriod || !updates.size) throw new BadRequestException('Nenhum empreendimento cadastrado encontrado no arquivo');
+    const { mes: importMes, ano: importAno } = filePeriod;
+    await this.prisma.$transaction([...updates].map(([empreendimentoId, data]) => this.prisma.contabilidadeMensal.upsert({
+      where: { empreendimentoId_mes_ano: { empreendimentoId, mes: importMes, ano: importAno } },
+      create: { empreendimentoId, mes: importMes, ano: importAno, ...data },
       update: data,
     })));
-    return { fonte, mes, ano, empreendimentos: updates.size };
+    return { fonte, mes: importMes, ano: importAno, empreendimentos: updates.size, empreendimentoIds: [...updates.keys()], naoCadastrados: [...unmatched] };
   }
 
   async aditivos(empreendimentoId: string) { return this.prisma.aditivoContabil.findMany({ where: { empreendimentoId }, orderBy: [{ ano: 'desc' }, { mes: 'desc' }] }); }
+  async periodos() {
+    const records = await this.prisma.contabilidadeMensal.findMany({ select: { empreendimentoId: true, mes: true, ano: true, receitaImportadaEm: true, estoqueImportadoEm: true, balanceteImportadoEm: true }, orderBy: [{ ano: 'desc' }, { mes: 'desc' }] });
+    const periods = new Map<string, { mes: number; ano: number; empreendimentoIds: string[]; receita: number; estoque: number; balancete: number }>();
+    for (const record of records) {
+      const key = `${record.ano}-${record.mes}`;
+      if (!periods.has(key)) periods.set(key, { mes: record.mes, ano: record.ano, empreendimentoIds: [], receita: 0, estoque: 0, balancete: 0 });
+      const item = periods.get(key)!;
+      item.empreendimentoIds.push(record.empreendimentoId);
+      if (record.receitaImportadaEm) item.receita++;
+      if (record.estoqueImportadoEm) item.estoque++;
+      if (record.balanceteImportadoEm) item.balancete++;
+    }
+    return [...periods.values()];
+  }
   async criarAditivo(body: { empreendimentoId: string; mes: number; ano: number; valor: number; observacao?: string }) {
     this.validatePeriod(Number(body.mes), Number(body.ano));
     if (!Number.isFinite(Number(body.valor)) || Number(body.valor) <= 0) throw new BadRequestException('Valor inválido');
     return this.prisma.aditivoContabil.create({ data: { ...body, mes: Number(body.mes), ano: Number(body.ano), valor: new Decimal(body.valor) } });
   }
   async removerAditivo(id: string) { return this.prisma.aditivoContabil.delete({ where: { id } }); }
+  async modeloAditivos() {
+    const projects = await this.prisma.empreendimento.findMany({ select: { idSienge: true, nome: true }, orderBy: { nome: 'asc' } });
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ['Código OPAC', 'Empreendimento', 'Valor (R$)', 'Observação'],
+      ...projects.map(p => [p.idSienge, p.nome, '', '']),
+    ]);
+    sheet['!cols'] = [{ wch: 18 }, { wch: 42 }, { wch: 18 }, { wch: 45 }];
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, 'Aditivos');
+    return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
+  async importarAditivos(buffer: Buffer | undefined, mes: number, ano: number) {
+    this.validatePeriod(mes, ano);
+    if (!buffer?.length) throw new BadRequestException('Planilha obrigatória');
+    let book: XLSX.WorkBook;
+    try { book = XLSX.read(buffer, { type: 'buffer' }); }
+    catch { throw new BadRequestException('Planilha inválida'); }
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(book.Sheets[book.SheetNames[0]], { header: 1, defval: '', raw: true });
+    const header = (rows[0] || []).map(v => String(v).trim());
+    if (header[0] !== 'Código OPAC' || header[1] !== 'Empreendimento' || header[2] !== 'Valor (R$)' || header[3] !== 'Observação') throw new BadRequestException('Use o modelo de aditivos baixado no sistema');
+    const projects = await this.prisma.empreendimento.findMany({ select: { id: true, idSienge: true, nome: true } });
+    const byCode = new Map(projects.map(p => [p.idSienge, p]));
+    const entries: { empreendimentoId: string; mes: number; ano: number; valor: Decimal; observacao: string; origem: string }[] = [];
+    const seen = new Set<string>();
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const code = String(row[0] ?? '').trim();
+      const value = String(row[2] ?? '').trim();
+      if (!code && !value) continue;
+      if (!code) throw new BadRequestException(`Linha ${i + 1}: código OPAC ausente`);
+      const project = byCode.get(code);
+      if (!project || String(row[1] ?? '').trim() !== project.nome.trim()) throw new BadRequestException(`Linha ${i + 1}: empreendimento não corresponde ao cadastro`);
+      if (seen.has(code)) throw new BadRequestException(`Linha ${i + 1}: empreendimento duplicado`);
+      seen.add(code);
+      if (!value) continue;
+      const parsed = typeof row[2] === 'number' ? row[2] : money(value);
+      if (!Number.isFinite(parsed)) throw new BadRequestException(`Linha ${i + 1}: valor inválido`);
+      if (parsed < 0) throw new BadRequestException(`Linha ${i + 1}: valor negativo`);
+      if (parsed === 0) continue;
+      entries.push({ empreendimentoId: project.id, mes, ano, valor: new Decimal(parsed), observacao: String(row[3] ?? '').trim(), origem: 'PLANILHA' });
+    }
+    await this.prisma.$transaction(async tx => {
+      await tx.aditivoContabil.deleteMany({ where: { mes, ano, origem: 'PLANILHA' } });
+      if (entries.length) await tx.aditivoContabil.createMany({ data: entries });
+    });
+    return { mes, ano, importados: entries.length, ignorados: seen.size - entries.length };
+  }
   async mapeamentos() { return this.prisma.mapeamentoContabil.findMany({ orderBy: { empresaSienge: 'asc' } }); }
   async empresasSienge() {
     const output: { chave: string; nome: string; cnpj: string; empreendimento: string | null }[] = [];
@@ -168,12 +252,20 @@ export class ContabilidadeService {
           const project = byCnpj.get(String(company.cnpj || '').replace(/\D/g, ''));
           if (!project) continue;
           const key = `${company.id}_${source.name}`;
-          const map = maps.find(m => m.empresaSienge === key);
-          if (!map) { errors.push({ empresa: key, erro: 'Mapeamento de contas pendente' }); continue; }
           try {
             const query = new URLSearchParams({ companyId: String(company.id), initialPeriod: start, finalPeriod: end, desconsiderClosingBalance: 'true', onlyAccountsWithMovements: 'false', thirdParties: 'false' });
             const payload = await get(`trial-balance?${query}`);
             const accounts: any[] = payload.results || [];
+            let map = maps.find(m => m.empresaSienge === key);
+            if (!map) {
+              const normalize = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+              const unique = (predicate: (account: any) => boolean) => { const found = accounts.filter(predicate); return found.length === 1 ? found[0].account as string : null; };
+              const contaConstrucao = unique(a => a.accountType === 'SYNTHETIC' && /CONSTRU.*ANDAMENTO/.test(normalize(a.accountName)));
+              const contaTransferencia = unique(a => a.accountType === 'SYNTHETIC' && /TRANSFERENCIA DE CUSTO INCORRIDO/.test(normalize(a.accountName)));
+              const contaTerreno = unique(a => a.accountType === 'ANALYTICAL' && a.accountGroup === 'ASSETS' && normalize(a.accountName) === 'TERRENO');
+              if (!contaConstrucao || !contaTransferencia || !contaTerreno) throw new Error('Não foi possível identificar três contas únicas no Balancete; revise o mapeamento manual');
+              map = await this.prisma.mapeamentoContabil.upsert({ where: { empresaSienge: key }, create: { empresaSienge: key, contaConstrucao, contaTransferencia, contaTerreno }, update: {} });
+            }
             const account = (code: string) => accounts.find(a => String(a.account) === code);
             const construction = account(map.contaConstrucao), transfer = account(map.contaTransferencia), land = account(map.contaTerreno);
             if (!construction || !transfer || !land) throw new Error('Conta mapeada ausente no Balancete');

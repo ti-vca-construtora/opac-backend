@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/auth-jwt.guard';
 import { ContabilidadeService } from './contabilidade.service';
 
@@ -8,6 +9,9 @@ import { ContabilidadeService } from './contabilidade.service';
 export class ContabilidadeController {
   constructor(private readonly service: ContabilidadeService) {}
 
+  @Get('periodos')
+  periodos() { return this.service.periodos(); }
+
   @Get('acompanhamento')
   acompanhar(@Query('empreendimentoId') empreendimentoId: string, @Query('mes', ParseIntPipe) mes: number, @Query('ano', ParseIntPipe) ano: number) {
     return this.service.acompanhar(empreendimentoId, mes, ano);
@@ -15,8 +19,22 @@ export class ContabilidadeController {
 
   @Post('importar/:fonte')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
-  importar(@Param('fonte') fonte: string, @UploadedFile() file: Express.Multer.File, @Body('mes') mes: string, @Body('ano') ano: string) {
-    return this.service.importar(fonte, file?.buffer, Number(mes), Number(ano));
+  importar(@Param('fonte') fonte: string, @UploadedFile() file: Express.Multer.File, @Body('mes') mes?: string, @Body('ano') ano?: string) {
+    return this.service.importar(fonte, file?.buffer, mes ? Number(mes) : undefined, ano ? Number(ano) : undefined);
+  }
+
+  @Get('aditivos/modelo')
+  async modeloAditivos(@Res() response: Response) {
+    const buffer = await this.service.modeloAditivos();
+    response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    response.setHeader('Content-Disposition', 'attachment; filename="modelo-aditivos-contabeis.xlsx"');
+    response.send(buffer);
+  }
+
+  @Post('aditivos/importar')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  importarAditivos(@UploadedFile() file: Express.Multer.File, @Body('mes') mes: string, @Body('ano') ano: string) {
+    return this.service.importarAditivos(file?.buffer, Number(mes), Number(ano));
   }
 
   @Get('aditivos')

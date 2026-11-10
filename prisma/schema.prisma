@@ -115,6 +115,7 @@ model AditivoContabil {
   ano Int
   valor Decimal @db.Decimal(18, 2)
   observacao String?
+  origem String @default("MANUAL")
   createdAt DateTime @default(now())
   @@map("aditivos_contabeis")
 }
