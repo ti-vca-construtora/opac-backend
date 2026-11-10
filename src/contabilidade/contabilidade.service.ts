@@ -103,6 +103,7 @@ export class ContabilidadeService {
   async aditivos(empreendimentoId: string) { return this.prisma.aditivoContabil.findMany({ where: { empreendimentoId }, orderBy: [{ ano: 'desc' }, { mes: 'desc' }] }); }
   async periodos() {
     const records = await this.prisma.contabilidadeMensal.findMany({ select: { empreendimentoId: true, mes: true, ano: true, receitaImportadaEm: true, estoqueImportadoEm: true, balanceteImportadoEm: true }, orderBy: [{ ano: 'desc' }, { mes: 'desc' }] });
+    records.sort((a, b) => b.ano - a.ano || b.mes - a.mes || Number(!!b.receitaImportadaEm) - Number(!!a.receitaImportadaEm) || Number(!!b.estoqueImportadoEm) - Number(!!a.estoqueImportadoEm));
     const periods = new Map<string, { mes: number; ano: number; empreendimentoIds: string[]; receita: number; estoque: number; balancete: number }>();
     for (const record of records) {
       const key = `${record.ano}-${record.mes}`;
