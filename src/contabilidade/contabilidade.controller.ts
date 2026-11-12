@@ -24,8 +24,8 @@ export class ContabilidadeController {
   }
 
   @Get('aditivos/modelo')
-  async modeloAditivos(@Res() response: Response) {
-    const buffer = await this.service.modeloAditivos();
+  async modeloAditivos(@Res() response: Response, @Query('mes') mes?: string, @Query('ano') ano?: string) {
+    const buffer = await this.service.modeloAditivos(mes ? Number(mes) : undefined, ano ? Number(ano) : undefined);
     response.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     response.setHeader('Content-Disposition', 'attachment; filename="modelo-aditivos-contabeis.xlsx"');
     response.send(buffer);
@@ -33,8 +33,8 @@ export class ContabilidadeController {
 
   @Post('aditivos/importar')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
-  importarAditivos(@UploadedFile() file: Express.Multer.File, @Body('mes') mes: string, @Body('ano') ano: string) {
-    return this.service.importarAditivos(file?.buffer, Number(mes), Number(ano));
+  importarAditivos(@UploadedFile() file: Express.Multer.File) {
+    return this.service.importarAditivos(file?.buffer);
   }
 
   @Get('aditivos')

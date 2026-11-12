@@ -122,52 +122,67 @@ export class ContabilidadeService {
     return this.prisma.aditivoContabil.create({ data: { ...body, mes: Number(body.mes), ano: Number(body.ano), valor: new Decimal(body.valor) } });
   }
   async removerAditivo(id: string) { return this.prisma.aditivoContabil.delete({ where: { id } }); }
-  async modeloAditivos() {
+  async modeloAditivos(mes?: number, ano?: number) {
+    if (mes !== undefined || ano !== undefined) this.validatePeriod(mes!, ano!);
     const projects = await this.prisma.empreendimento.findMany({ select: { idSienge: true, nome: true }, orderBy: { nome: 'asc' } });
+    const competencia = mes !== undefined && ano !== undefined ? `${String(mes).padStart(2, '0')}/${ano}` : '';
     const sheet = XLSX.utils.aoa_to_sheet([
-      ['Código OPAC', 'Empreendimento', 'Valor (R$)', 'Observação'],
-      ...projects.map(p => [p.idSienge, p.nome, '', '']),
+      ['Código OPAC', 'Empreendimento', 'Competência (MM/AAAA)', 'Valor (R$)', 'Observação'],
+      ...projects.map(p => [p.idSienge, p.nome, competencia, '', '']),
     ]);
-    sheet['!cols'] = [{ wch: 18 }, { wch: 42 }, { wch: 18 }, { wch: 45 }];
+    for (let row = 2; row <= projects.length + 1; row++) {
+      sheet[`C${row}`] ||= { t: 's', v: competencia };
+      sheet[`C${row}`].z = '@';
+    }
+    sheet['!cols'] = [{ wch: 18 }, { wch: 42 }, { wch: 24 }, { wch: 18 }, { wch: 45 }];
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, 'Aditivos');
     return XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }
-  async importarAditivos(buffer: Buffer | undefined, mes: number, ano: number) {
-    this.validatePeriod(mes, ano);
+  async importarAditivos(buffer: Buffer | undefined) {
     if (!buffer?.length) throw new BadRequestException('Planilha obrigatória');
     let book: XLSX.WorkBook;
     try { book = XLSX.read(buffer, { type: 'buffer' }); }
     catch { throw new BadRequestException('Planilha inválida'); }
     const rows = XLSX.utils.sheet_to_json<unknown[]>(book.Sheets[book.SheetNames[0]], { header: 1, defval: '', raw: true });
     const header = (rows[0] || []).map(v => String(v).trim());
-    if (header[0] !== 'Código OPAC' || header[1] !== 'Empreendimento' || header[2] !== 'Valor (R$)' || header[3] !== 'Observação') throw new BadRequestException('Use o modelo de aditivos baixado no sistema');
+    if (header[0] !== 'Código OPAC' || header[1] !== 'Empreendimento' || header[2] !== 'Competência (MM/AAAA)' || header[3] !== 'Valor (R$)' || header[4] !== 'Observação') throw new BadRequestException('Baixe o novo modelo de aditivos com a coluna Competência (MM/AAAA)');
     const projects = await this.prisma.empreendimento.findMany({ select: { id: true, idSienge: true, nome: true } });
     const byCode = new Map(projects.map(p => [p.idSienge, p]));
     const entries: { empreendimentoId: string; mes: number; ano: number; valor: Decimal; observacao: string; origem: string }[] = [];
     const seen = new Set<string>();
+    const competencies = new Map<string, { mes: number; ano: number }>();
+    let skipped = 0;
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const code = String(row[0] ?? '').trim();
-      const value = String(row[2] ?? '').trim();
+      const value = String(row[3] ?? '').trim();
       if (!code && !value) continue;
       if (!code) throw new BadRequestException(`Linha ${i + 1}: código OPAC ausente`);
       const project = byCode.get(code);
       if (!project || String(row[1] ?? '').trim() !== project.nome.trim()) throw new BadRequestException(`Linha ${i + 1}: empreendimento não corresponde ao cadastro`);
-      if (seen.has(code)) throw new BadRequestException(`Linha ${i + 1}: empreendimento duplicado`);
-      seen.add(code);
-      if (!value) continue;
-      const parsed = typeof row[2] === 'number' ? row[2] : money(value);
+      if (!value) { skipped++; continue; }
+      const competencyText = String(row[2] ?? '').trim();
+      const competency = period(competencyText);
+      if (!competency) throw new BadRequestException(`Linha ${i + 1}: informe a competência como MM/AAAA`);
+      this.validatePeriod(competency.mes, competency.ano);
+      const key = `${code}:${competency.ano}-${competency.mes}`;
+      if (seen.has(key)) throw new BadRequestException(`Linha ${i + 1}: aditivo duplicado para este empreendimento e competência`);
+      seen.add(key);
+      competencies.set(`${competency.ano}-${competency.mes}`, competency);
+      const parsed = typeof row[3] === 'number' ? row[3] : money(value);
       if (!Number.isFinite(parsed)) throw new BadRequestException(`Linha ${i + 1}: valor inválido`);
       if (parsed < 0) throw new BadRequestException(`Linha ${i + 1}: valor negativo`);
       if (parsed === 0) continue;
-      entries.push({ empreendimentoId: project.id, mes, ano, valor: new Decimal(parsed), observacao: String(row[3] ?? '').trim(), origem: 'PLANILHA' });
+      entries.push({ empreendimentoId: project.id, mes: competency.mes, ano: competency.ano, valor: new Decimal(parsed), observacao: String(row[4] ?? '').trim(), origem: 'PLANILHA' });
     }
-    await this.prisma.$transaction(async tx => {
-      await tx.aditivoContabil.deleteMany({ where: { mes, ano, origem: 'PLANILHA' } });
+    if (!competencies.size) throw new BadRequestException('Preencha pelo menos um valor e sua competência na planilha');
+    const replaced = await this.prisma.$transaction(async tx => {
+      const deleted = await tx.aditivoContabil.deleteMany({ where: { origem: 'PLANILHA', OR: [...competencies.values()] } });
       if (entries.length) await tx.aditivoContabil.createMany({ data: entries });
+      return deleted.count;
     });
-    return { mes, ano, importados: entries.length, ignorados: seen.size - entries.length };
+    return { importados: entries.length, ignorados: skipped, substituidos: replaced, competencias: [...competencies.values()].map(p => `${String(p.mes).padStart(2, '0')}/${p.ano}`) };
   }
   async mapeamentos() { return this.prisma.mapeamentoContabil.findMany({ orderBy: { empresaSienge: 'asc' } }); }
   async empresasSienge() {
